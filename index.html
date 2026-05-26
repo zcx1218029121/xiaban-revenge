@@ -217,12 +217,14 @@ var RELICS = [
     onDamaged:function(n){ return n; } }, // handled inline in poison tick
 ];
 
-function hasRelic(id){
+function hasRelic(st, id){
+  var s = st.state ? st.state : st;
   return s.relics.some(function(r){ return r.id===id||r.name===id; });
 }
 
-function triggerRelic(event){
-  var args=Array.prototype.slice.call(arguments,1);
+function triggerRelic(st, event){
+  var args=Array.prototype.slice.call(arguments,2);
+  var s = st.state ? st.state : st;
   // Iterate PLAYER INVENTORY (s.relics), not template array (RELICS)
   (s.relics||[]).forEach(function(r){
     if(r.used===true) return;
@@ -585,10 +587,10 @@ function retryBoss(){
 }
 
 function nextDay(){
-  triggerRelic("onDayEnd");
+  triggerRelic(s,"onDayEnd");
   s.day++;
   if(s.day>5){ showScreen("finalwin"); return; }
-  triggerRelic("onDayStart");
+  triggerRelic(s,"onDayStart");
   s.idx=0;s.stress=0;s.skipNextEvent=false;s.bossDamageMult=1;s.en=3;s.men=3;
   hideAll();showScreen("day-transition");updateDayProgress();
   document.getElementById("day-banner").textContent="Day "+s.day;
@@ -666,7 +668,7 @@ function startFight(key){
   if(s.nextBattleStress){ s.stress+=s.nextBattleStress;s.nextBattleStress=0; }
   var drawN=5+(s.nextBattleDraw||0);s.nextBattleDraw=0;
   drawCards(drawN);
-  triggerRelic("onBattleStart");
+  triggerRelic(s,"onBattleStart");
   updateEnemyDisplay();updateAll();
   log(e.name+" 出现了！","event");
 }
@@ -680,7 +682,7 @@ function startBoss(key){
   s.ene={name:b.name,emoji:b.emoji,maxHp:Math.floor(b.maxHp*hpMult),hp:Math.floor(b.maxHp*hpMult),weak:0,shield:0,armor:0,charge:0,poison:0,ints:b.ints,onTurn:b.onTurn,getIL:b.getIL};
   if(s.nextBattleBonusDmg){ s.tempDmgMult+=(s.nextBattleBonusDmg/8);s.nextBattleBonusDmg=0; }
   drawCards(5);
-  triggerRelic("onBattleStart");
+  triggerRelic(s,"onBattleStart");
   updateEnemyDisplay();updateAll();
   log("BOSS战："+b.name+"！","event");
 }
@@ -736,7 +738,7 @@ function endTurn(){
   // Apply poison at start of enemy turn
   if(s.ene&&s.ene.poison>0){
     var pdmg=s.ene.poison;
-    if(hasRelic("jiangyan")) pdmg+=2; // 降噪耳机
+    if(hasRelic(s,"jiangyan")) pdmg+=2; // 降噪耳机
     s.ene.hp-=pdmg;
     log("中毒发作！"+pdmg+"伤害","special");
     showDmgPopup(document.getElementById("enemy-sprite"),pdmg);
@@ -769,7 +771,7 @@ function dealDamageToEnemy(n){
   if(!s.ene) return false;
   var e=s.ene;
   var bonus=0;
-  if(hasRelic("jixie")) bonus+=2;
+  if(hasRelic(s,"jixie")) bonus+=2;
   var wm=(e.weak&&e.weak>0)?Math.pow(0.75,e.weak):1;
   var fd=Math.floor((n+bonus)*wm);
   var sm=1;
@@ -794,7 +796,7 @@ function dealDamageToPlayer(n){
   if(s.immuneThisTurn){ log("准时下班！免疫本次攻击","special"); s.immuneThisTurn=false; return; }
   if(s.sh>0){var ab=Math.min(s.sh,n);s.sh-=ab;n-=ab;if(ab>0){showDmgPopup(document.getElementById("shield"),ab,true);log("护盾抵消"+ab,"heal");}}
   if(n>0){
-    n=triggerRelic("onDamaged",n);
+    n=triggerRelic(s,"onDamaged",n);
     if(s.playerWeak>0){ n=Math.floor(n*0.75); }
     s.php=Math.max(0,s.php-n);
     showDmgPopup(document.getElementById("hp"),n);
@@ -842,7 +844,7 @@ function gainShield(n){
 }
 
 function heal(n){
-  if(hasRelic("renshen")) n=Math.min(n,12);
+  if(hasRelic(s,"renshen")) n=Math.min(n,12);
   var old=s.php;s.php=Math.min(s.pmax,s.php+n);
   var healed=s.php-old;
   if(healed>0) log("治疗 "+healed+" HP","heal");
@@ -872,7 +874,7 @@ function shuffle(arr){
 
 function win(){
   if(s.go) return;s.clearBattle();
-  triggerRelic("onFightWin");
+  triggerRelic(s,"onFightWin");
   if(s.boss){
     if(s.day>=5){setTimeout(function(){ showScreen("finalwin"); },500);}
     else {
@@ -883,7 +885,7 @@ function win(){
         document.getElementById("dayclear-sub").textContent="今天准时下班了，明天继续";
         // Show relic screen then dayclear
         if(s.day===1&&s.relics.length<10){
-          var pool=RELICS.filter(function(r){ return !hasRelic(r.id); });
+          var pool=RELICS.filter(function(r){ return !hasRelic(s,r.id); });
           if(pool.length>0){ showRelicScreen(); }
         }
         showScreen("dayclear-screen");
@@ -903,7 +905,7 @@ function lose(){
 
 function showRelicScreen(){
   if(s.day===1&&s.boss&&s.relics.length<10){
-    var pool=RELICS.filter(function(r){ return !hasRelic(r.id); });
+    var pool=RELICS.filter(function(r){ return !hasRelic(s,r.id); });
     if(pool.length===0){ showRewardScreen(); return; }
     var choices=[];
     while(choices.length<3&&pool.length>0){
@@ -961,7 +963,7 @@ function showCardRewards(){
 }
 
 function showRelicRewards(){
-  var pool=RELICS.filter(function(r){ return !hasRelic(r.id)&&r.rarity<=2; });
+  var pool=RELICS.filter(function(r){ return !hasRelic(s,r.id)&&r.rarity<=2; });
   if(pool.length===0){
     var content=document.getElementById("reward-content");
     content.innerHTML="<div style='color:#888;text-align:center;padding:20px'>暂无可选遗物</div>";
