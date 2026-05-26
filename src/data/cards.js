@@ -30,8 +30,8 @@ var CP = {
   // === 摸鱼派 ===
   paogouqi: { name:"泡枸杞",   cost:1, type:"skill",  effect:"6护盾+3层中毒",         action:function(g){ g.gainShield(6); g.applyPoison(3); } },
   manxing:  { name:"慢性中毒", cost:2, type:"skill",  effect:"5层中毒，本回合不抽牌",  action:function(g){ g.applyPoison(5); g.state.noDrawThisTurn=true; } },
-  bingjiatiao:{ name:"病假条",  cost:0, type:"skill",  effect:"4护盾，中毒层数越高敌人受伤越多",action:function(g){ g.gainShield(4); var e=g.enemy; if(e&&e.poison>0){ var bonus=e.poison; dealDamageToEnemy(bonus); log("病假加成："+bonus+"额外伤害","special"); updateAll(); } } },
-  zunshixiaban:{ name:"准时下班",cost:0,type:"skill", effect:"本回合不受攻击，-2压力",action:function(g){ g.state.stress=Math.max(0,g.state.stress-2); g.state.immuneThisTurn=true; log("准时下班！本回合免疫攻击","special"); } },
+  bingjiatiao:{ name:"病假条",  cost:0, type:"skill",  effect:"4护盾，中毒层数越高敌人受伤越多",action:function(g){ g.gainShield(4); var e=g.enemy; if(e&&e.poison>0){ var bonus=e.poison; g.dealDamageToEnemy(bonus); g.log("病假加成："+bonus+"额外伤害","special"); g.updateAll(); } } },
+  zunshixiaban:{ name:"准时下班",cost:0,type:"skill", effect:"本回合不受攻击，-2压力",action:function(g){ g.state.stress=Math.max(0,g.state.stress-2); g.state.immuneThisTurn=true; g.log("准时下班！本回合免疫攻击","special"); } },
 };
 
 export { CP };

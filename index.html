@@ -794,7 +794,7 @@ function dealDamageToEnemy(n){
   else if(s.stress>=7) sm=1.5;
   else if(s.stress>=4) sm=1.25;
   fd=Math.floor(fd*sm);
-  if(s.tempDmgMult) fd=Math.floor(fd*s.tempDmgMult);
+  if(s.tempDmgMult){ fd=Math.floor(fd*s.tempDmgMult); s.tempDmgMult=0; } // consume after use
   if(e.armor&&e.armor>0){var ab=Math.min(e.armor,fd);e.armor-=ab;fd-=ab;if(ab>0) log("护甲抵消"+ab+"伤害","heal");}
   e.hp=Math.max(0,e.hp-fd);
   if(e.weak>0) e.weak--;
