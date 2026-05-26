@@ -40,7 +40,7 @@ body{font-family:"Noto Sans SC",sans-serif;background:#1a1a2e;color:#eaeaea;min-
 .hud-stat{display:flex;align-items:center;gap:5px}
 .hp-color{color:#ff6b6b}.energy-color{color:#ffe66d}.shield-color{color:#4ecdc4}.stress-color{color:#9b59b6}
 .log{width:100%;max-width:700px;height:70px;overflow-y:auto;background:rgba(0,0,0,.3);border-radius:8px;padding:8px 12px;font-size:.72rem;color:#aaa;margin-bottom:6px}
-.log-entry{margin-bottom:2px}.log-entry.damage{color:#ff6b6b}.log-entry.heal{color:#4ecdc4}.log-entry.stress{color:#9b59b6}.log-entry.turn{color:#ffc107}.log-entry.event{color:#60a5fa}
+
 .hand-area{width:100%;max-width:900px;min-height:140px;display:flex;justify-content:center;align-items:center;gap:7px;flex-wrap:wrap;padding:8px;background:rgba(255,255,255,.03);border-radius:12px;margin-bottom:6px}
 .card{width:96px;height:128px;border-radius:8px;padding:5px;display:flex;flex-direction:column;cursor:pointer;transition:transform .15s,box-shadow .15s;position:relative;font-size:.72rem;flex-shrink:0}
 .card:hover{transform:translateY(-10px);box-shadow:0 8px 25px rgba(0,0,0,.5);z-index:10}
@@ -55,9 +55,25 @@ body{font-family:"Noto Sans SC",sans-serif;background:#1a1a2e;color:#eaeaea;min-
 .card-cost{position:absolute;top:-6px;right:-6px;width:20px;height:20px;background:#ffe66d;color:#1a1a2e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.75rem;box-shadow:0 2px 6px rgba(0,0,0,.4)}
 .card-name{font-weight:700;font-size:.78rem;text-align:center;color:#fff;margin:1px 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-effect{font-size:.58rem;color:#ccc;text-align:center;flex:1;display:flex;align-items:center;justify-content:center;line-height:1.3;padding:0 2px}
+.card-type{font-size:.5rem;text-align:center;color:rgba(255,255,255,.6);letter-spacing:.5px;font-weight:600;text-transform:uppercase;padding:1px 0}
+.type-attack{color:#ff6b6b}
+.type-skill{color:#60a5fa}
+.type-power{color:#c084fc}
+.type-curse{color:#f87171}
 .end-turn-btn{padding:9px 28px;font-size:1rem;font-weight:700;background:linear-gradient(135deg,#e94560,#c23152);color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;box-shadow:0 4px 15px rgba(233,69,96,.4)}
 .end-turn-btn:hover{transform:translateY(-2px)}
 .end-turn-btn:disabled{background:#444;color:#888;cursor:not-allowed}
+.log-entry{display:flex;align-items:center;gap:5px;font-size:.8rem;padding:3px 6px;border-radius:4px;margin-bottom:2px;background:rgba(0,0,0,.2)}
+.log-entry.damage{color:#ff6b6b;background:rgba(255,107,107,.1)}
+.log-entry.heal{color:#4ade80;background:rgba(74,222,128,.1)}
+.log-entry.stress{color:#fb923c;background:rgba(251,146,60,.1)}
+.log-entry.event{color:#a78bfa;background:rgba(167,139,250,.1)}
+.log-entry.player{color:#60a5fa;background:rgba(96,165,250,.1)}
+.log-entry.breakdown{color:#f472b6;background:rgba(244,114,182,.2);font-weight:700}
+.log-entry.special{color:#fbbf24;background:rgba(251,191,36,.1)}
+.log-icon{font-size:.9rem;flex-shrink:0}
+.relic-choice{cursor:pointer;background:rgba(255,255,255,.06);border:2px solid rgba(255,193,7,.3);border-radius:12px;padding:16px 20px;min-width:120px;text-align:center;transition:transform .15s,border-color .15s}
+.relic-choice:hover{transform:translateY(-4px);border-color:#ffc107;background:rgba(255,193,7,.1)}
 .dmg-popup{position:fixed;font-size:1.6rem;font-weight:900;color:#ff6b6b;text-shadow:2px 2px 0 #000;pointer-events:none;z-index:200;animation:popUp .8s forwards}
 @keyframes popUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-50px) scale(1.4)}}
 .shield-popup{color:#4ecdc4}
@@ -146,19 +162,74 @@ var CP = {
   tongxiao: { name:"通宵",     cost:3, type:"attack", effect:"22伤害,+3压力",    action:function(g){ g.dealDamageToEnemy(22); g.addStress(3); } },
   shuoguo:  { name:"甩锅",     cost:1, type:"attack", effect:"5伤害,压力-1",      action:function(g){ g.dealDamageToEnemy(5); g.state.stress=Math.max(0,g.state.stress-1); } },
   zuihui:   { name:"最终汇报", cost:3, type:"attack", effect:"25伤害",            action:function(g){ g.dealDamageToEnemy(25); } },
+  // === 卷王派 ===
+  guolaosi: { name:"过劳死",   cost:3, type:"attack", effect:"25伤+4压力，击杀回复12HP",action:function(g){ var killed=g.dealDamageToEnemy(25); g.addStress(4); if(killed) g.heal(12); } },
+  cusi:     { name:"猝死急救", cost:2, type:"attack", effect:"14伤+2压力，击杀回复8HP", action:function(g){ var killed=g.dealDamageToEnemy(14); g.addStress(2); if(killed) g.heal(8); } },
+  lingqisan: { name:"007套餐",  cost:4, type:"attack", effect:"40伤+6压力，下次攻击x1.5",action:function(g){ g.addStress(6); var mult=g.state.tempDmgMult||1; g.state.tempDmgMult=mult*1.5; g.dealDamageToEnemy(40); } },
+  jixiao:   { name:"绩效冲刺", cost:1, type:"attack", effect:"8伤+1压力，击杀获得3护盾",action:function(g){ var killed=g.dealDamageToEnemy(8); g.addStress(1); if(killed) g.gainShield(3); } },
+  // === 摸鱼派 ===
+  paogouqi: { name:"泡枸杞",   cost:1, type:"skill",  effect:"6护盾+3层中毒",         action:function(g){ g.gainShield(6); g.applyPoison(3); } },
+  manxing:  { name:"慢性中毒", cost:2, type:"skill",  effect:"5层中毒，本回合不抽牌",  action:function(g){ g.applyPoison(5); g.state.noDrawThisTurn=true; } },
+  bingjiatiao:{ name:"病假条",  cost:0, type:"skill",  effect:"4护盾，中毒层数越高敌人受伤越多",action:function(g){ g.gainShield(4); var e=g.enemy; if(e&&e.poison>0){ var bonus=e.poison; dealDamageToEnemy(bonus); log("病假加成："+bonus+"额外伤害","special"); updateAll(); } } },
+  zunshixiaban:{ name:"准时下班",cost:0,type:"skill", effect:"本回合不受攻击，-2压力",action:function(g){ g.state.stress=Math.max(0,g.state.stress-2); g.state.immuneThisTurn=true; log("准时下班！本回合免疫攻击","special"); } },
 };
 // ===== ENEMIES =====
 var EN = {
-  xinren:  { name:"职场新人",   emoji:"\uD83D\uDC68\u200D\uD83D\uDCBB", maxHp:15, onTurn:function(g, e){ g.dealDamageToPlayer(5); g.drawCards(1); g.log("新人请教了你","damage"); }, getIL:function(){ return "\uD83D\uDC47 攻击5+抽1"; } },
-  laoyuhua:{ name:"老油条",     emoji:"\uD83D\uDC94",  maxHp:20, canWeaken:false, onTurn:function(g, e){ g.dealDamageToPlayer(8); g.log("老油条推诿甩锅","damage"); }, getIL:function(){ return "\uD83D\uDC47 攻击8"; } },
-  ppt:     { name:"PPT纺织工",  emoji:"\uD83D\uDCCA", maxHp:18, onTurn:function(g, e){ g.dealDamageToPlayer(6); g.log("PPT轰炸了","damage"); }, getIL:function(){ return "\uD83D\uDCCA 攻击6"; } },
-  youjian: { name:"邮件轰炸机", emoji:"\uD83D\uDCE7",  maxHp:12, onTurn:function(g, e){ var orig=this; setTimeout(function(){ g.dealDamageToPlayer(4); }, 250); g.dealDamageToPlayer(4); g.log("邮件轰炸x2！","damage"); }, getIL:function(){ return "\uD83D\uDCE7 攻击4x2"; } },
-  kaihui:  { name:"开会狂魔",   emoji:"\uD83D\uDDE3\uFE0F", maxHp:22, onTurn:function(g, e){ g.dealDamageToPlayer(5); g.dealDamageToPlayer(5); g.log("全体攻击x2！","damage"); }, getIL:function(){ return "\uD83D\uDDE3\uFE0F 全体10"; } },
-  mapei:   { name:"马屁精",     emoji:"\uD83E\uDD22",  maxHp:18, onTurn:function(g, e){ g.dealDamageToPlayer(7); g.log("马屁攻击","damage"); }, getIL:function(){ return "\uD83E\uDD22 攻击7"; } },
-  mapei_e: { name:"马屁精(精英)",emoji:"\uD83E\uDD22", maxHp:35, isElite:true, onTurn:function(g, e){ g.dealDamageToPlayer(10); g.log("精英马屁攻击！","damage"); }, getIL:function(){ return "\uD83E\uDD22 精英10"; } },
-  shuogua: { name:"甩锅侠(精英)",emoji:"\uD83C\uDFAD", maxHp:30, isElite:true, onTurn:function(g, e){ g.dealDamageToPlayer(12); g.addStress(2); g.log("甩锅侠反甩！+2压力","damage"); }, getIL:function(){ return "\uD83C\uDFAD 攻击12+压力+2"; } },
-  jiaban_e:{ name:"加班狂人(精英)",emoji:"\uD83D\uDE24",maxHp:40, isElite:true, onTurn:function(g, e){ var lost=40-(e.hp||40); var bonus=Math.floor(lost/5)*3; g.dealDamageToPlayer(15+bonus); g.log("加班狂人攻击"+(15+bonus)+"(+"+bonus+"加成)","damage"); }, getIL:function(){ return "\uD83D\uDE24 攻击15+失去HP"; } },
+  xinren:  { name:"职场新人",   emoji:"\uD83D\uDC68\u200D\uD83D\uDCBB", maxHp:15, onTurn:function(g, e){ g.dealDamageToPlayer(5); g.drawCards(1); g.log("新人请教了你","damage"); }, getIL:function(ctx, enemy){ return "\uD83D\uDC47 攻击5+抽1"; } },
+  laoyuhua:{ name:"老油条",     emoji:"\uD83D\uDC94",  maxHp:20, canWeaken:false, onTurn:function(g, e){ g.dealDamageToPlayer(8); g.log("老油条推诿甩锅","damage"); }, getIL:function(ctx, enemy){ return "\uD83D\uDC47 攻击8"; } },
+  ppt:     { name:"PPT纺织工",  emoji:"\uD83D\uDCCA", maxHp:18, onTurn:function(g, e){ g.dealDamageToPlayer(6); g.log("PPT轰炸了","damage"); }, getIL:function(ctx, enemy){ return "\uD83D\uDCCA 攻击6"; } },
+  youjian: { name:"邮件轰炸机", emoji:"\uD83D\uDCE7",  maxHp:12, onTurn:function(g, e){ var orig=this; setTimeout(function(){ g.dealDamageToPlayer(4); }, 250); g.dealDamageToPlayer(4); g.log("邮件轰炸x2！","damage"); }, getIL:function(ctx, enemy){ return "\uD83D\uDCE7 攻击4x2"; } },
+  kaihui:  { name:"开会狂魔",   emoji:"\uD83D\uDDE3\uFE0F", maxHp:22, onTurn:function(g, e){ g.dealDamageToPlayer(5); g.dealDamageToPlayer(5); g.log("全体攻击x2！","damage"); }, getIL:function(ctx, enemy){ return "\uD83D\uDDE3\uFE0F 全体10"; } },
+  mapei:   { name:"马屁精",     emoji:"\uD83E\uDD22",  maxHp:18, onTurn:function(g, e){ g.dealDamageToPlayer(7); g.log("马屁攻击","damage"); }, getIL:function(ctx, enemy){ return "\uD83E\uDD22 攻击7"; } },
+  mapei_e: { name:"马屁精(精英)",emoji:"\uD83E\uDD22", maxHp:35, isElite:true, onTurn:function(g, e){ g.dealDamageToPlayer(10); g.log("精英马屁攻击！","damage"); }, getIL:function(ctx, enemy){ return "\uD83E\uDD22 精英10"; } },
+  shuogua: { name:"甩锅侠(精英)",emoji:"\uD83C\uDFAD", maxHp:30, isElite:true, onTurn:function(g, e){ g.dealDamageToPlayer(12); g.addStress(2); g.log("甩锅侠反甩！+2压力","damage"); }, getIL:function(ctx, enemy){ return "\uD83C\uDFAD 攻击12+压力+2"; } },
+  jiaban_e:{ name:"加班狂人(精英)",emoji:"\uD83D\uDE24",maxHp:40, isElite:true, onTurn:function(g, e){ var lost=40-(e.hp||40); var bonus=Math.floor(lost/5)*3; g.dealDamageToPlayer(15+bonus); g.log("加班狂人攻击"+(15+bonus)+"(+"+bonus+"加成)","damage"); }, getIL:function(ctx, enemy){ return "\uD83D\uDE24 攻击15+失去HP"; } },
 };
+
+// ===== RELICS =====
+var RELICS = [
+  { id:"jixie",  name:"机械键盘", emoji:"⌨️", desc:"所有攻击 +2 伤害",     rarity:1,
+    onDamageDealt:function(n){ return n+2; } },
+  { id:"renshen",name:"人体工学椅", emoji:"🪑", desc:"单次治疗最多12点",    rarity:1,
+    onHeal:function(n){ return Math.min(n,12); } },
+  { id:"jiangya",name:"降压药",   emoji:"💊", desc:"初始压力 -2",          rarity:1,
+    onBattleStart:function(){ s.stress=Math.max(0,s.stress-2); } },
+  { id:"kafei",  name:"咖啡机",   emoji:"☕", desc:"战斗开始 +1 能量",     rarity:2,
+    onBattleStart:function(){ s.en=Math.min(s.men,s.en+1); log("咖啡提神！能量+1","special"); } },
+  { id:"parking",name:"停车场车位",emoji:"🅿️", desc:"战斗开始 +8 护盾",     rarity:2,
+    onBattleStart:function(){ s.sh+=8; log("占了个好车位！+8护盾","special"); } },
+  { id:"yugang", name:"鱼缸",     emoji:"🐠", desc:"战斗胜利 30% 抽1张",  rarity:2,
+    onFightWin:function(){ if(Math.random()<0.3){ drawCards(1); log("鱼缸里的鱼给你带来了好运！抽1张","special"); } } },
+  { id:"beiyong",name:"备用金",   emoji:"💵", desc:"可抵消一次最多15点伤害",rarity:3,
+    onDamaged:function(n){ var playerRelic=s.relics.find(function(r){ return r.id==="beiyong"; }); if(!playerRelic||playerRelic.used||n<=0) return n; playerRelic.used=true; log("备用金用尽！抵消"+(Math.min(n,15))+"伤害","special"); return Math.max(0,n-15); } },
+  { id:"hrtousu",name:"HR投诉热线",emoji:"📞", desc:"敌人开局自带1层虚弱",rarity:3,
+    onBattleStart:function(){ if(s.ene){ s.ene.weak=(s.ene.weak||0)+1; log("HR已投诉！敌人获得1层虚弱","special"); } } },
+  { id:"jinsheng",name:"晋升通知书",emoji:"📬", desc:"每天结束时压力 -3",   rarity:2,
+    onDayEnd:function(){ s.stress=Math.max(0,s.stress-3); log("收到晋升通知！压力-3","special"); } },
+  { id:"huiyi",  name:"会议室预订",emoji:"📅", desc:"每天开始额外抽2张",    rarity:3,
+    onDayStart:function(){ drawCards(2); log("预定了会议室！抽2张","special"); } },
+  // === 卷王派遗物 ===
+  { id:"996cup",  name:"996奖杯",   emoji:"🏆", desc:"压力≥7时攻击+50%，击杀回复5HP", rarity:2,
+    onDamageDealt:function(n){ if(s.stress>=7) return Math.floor(n*1.5); return n; },
+    onFightWin:function(){ if(s.stress>=7){ heal(5); log("996奖杯：击杀回血5HP","special"); } } },
+  // === 摸鱼派遗物 ===
+  { id:"jiangyan",name:"降噪耳机",  emoji:"🎧", desc:"敌人受中毒伤害时额外受2伤害",   rarity:2,
+    onDamaged:function(n){ return n; } }, // handled inline in poison tick
+];
+
+function hasRelic(id){
+  return s.relics.some(function(r){ return r.id===id||r.name===id; });
+}
+
+function triggerRelic(event){
+  var args=Array.prototype.slice.call(arguments,1);
+  // Iterate PLAYER INVENTORY (s.relics), not template array (RELICS)
+  (s.relics||[]).forEach(function(r){
+    if(r.used===true) return;
+    if(typeof r[event]==='function'){ var result=r[event].apply(r,args); if(result!==undefined) args[0]=result; }
+  });
+  return args[0];
+}
 
 // ===== BOSS DATA =====
 var BD = {
@@ -177,7 +248,7 @@ var BD = {
       if(it.stress) g.addStress(it.stress);
       if(it.extra) g.drawCards(1);
     },
-    getIL:function(){ return this.ints[g.state.biIdx%4].label; }
+    getIL:function(g, e){ return this.ints[g.state.biIdx%4].label; }
   },
   mike: {
     name:"PM Mike", emoji:"\uD83D\uDC6C", maxHp:60,
@@ -192,9 +263,9 @@ var BD = {
       var it=this.ints[bi];
       if(it.dmg) g.dealDamageToPlayer(it.dmg);
       if(it.energyDrain){ g.modifyEnergy(-it.energyDrain); g.log("能量-1！","event"); }
-      if(it.discard){ for(var i=0;i<it.discard;i++){ if(g.state.hand.length>0) g.state.disc.push(g.state.hand.pop()); } g.log("被迫弃"+it.discard+"张","event"); updateHand(); }
+      if(it.discard){ for(var i=0;i<it.discard;i++){ if(g.state.hand.length>0) g.state.disc.push(g.state.hand.pop()); } g.log("被迫弃"+it.discard+"张","event"); g.updateHand(); }
     },
-    getIL:function(){ return this.ints[g.state.biIdx%4].label; }
+    getIL:function(g, e){ return this.ints[g.state.biIdx%4].label; }
   },
   jessica: {
     name:"总监 Jessica", emoji:"\uD83D\uDC69\u200D\uD83D\uDCBC", maxHp:70,
@@ -213,7 +284,7 @@ var BD = {
       if(it.noShield){ g.state.noShieldTurns=1; g.log("本回合无法获得护盾！","stress"); }
       if(it.weak){ g.state.playerWeak=(g.state.playerWeak||0)+it.weak; g.log("获得"+it.weak+"层虚弱","event"); }
     },
-    getIL:function(){ return this.ints[g.state.biIdx%4].label; }
+    getIL:function(g, e){ return this.ints[g.state.biIdx%4].label; }
   },
   david: {
     name:"CTO David", emoji:"\uD83E\uDDD9", maxHp:80,
@@ -234,12 +305,12 @@ var BD = {
       }
       if(it.armor){ e.armor=(e.armor||0)+it.armor; g.log("David获得"+it.armor+"护甲","event"); }
       if(it.dmg){ var dmg=it.dmg; if(it.dmgDegrade){ dmg=Math.floor(dmg*0.7); } g.dealDamageToPlayer(dmg); }
-      if(it.discard){ for(var i=0;i<it.discard;i++){ if(g.state.hand.length>0) g.state.disc.push(g.state.hand.pop()); } g.log("被迫弃"+it.discard+"张","event"); updateHand(); }
+      if(it.discard){ for(var i=0;i<it.discard;i++){ if(g.state.hand.length>0) g.state.disc.push(g.state.hand.pop()); } g.log("被迫弃"+it.discard+"张","event"); g.updateHand(); }
       if(it.stress) g.addStress(it.stress);
       if(it.charge){ e.charge=3; g.log("终极架构开始蓄力！","event"); }
       if(it.dmgDegrade){ g.state.tempDmgMult=(g.state.tempDmgMult||1)*0.7; g.log("伤害-30%！","stress"); }
     },
-    getIL:function(e){
+    getIL:function(g, e){
       if(e.charge&&e.charge>0) return "\uD83C\uDFE2 蓄力中...("+(3-e.charge)+"/3)";
       return this.ints[g.state.biIdx%4].label;
     }
@@ -257,12 +328,12 @@ var BD = {
       var bi=g.state.biIdx%5;
       var it=this.ints[bi];
       if(it.aoe){ g.dealDamageToPlayer(it.aoe); if(it.stressAll) g.addStress(it.stressAll); }
-      else if(it.onetap){ var lost=g.state.php-1; g.state.php=1; g._showDmgPopup(document.getElementById("hp"),lost,false); g.log("末位淘汰！HP降至1！","damage"); }
+      else if(it.onetap){ var dmg=g.php-1; if(dmg>0) g.dealDamageToPlayer(dmg); }
       else if(it.healArm){ e.hp=Math.min(e.maxHp,(e.hp||100)+20); e.armor=(e.armor||0)+10; g.log("Alexander回复20HP+10护甲","heal"); }
       else if(it.榨取){ var lost=100-g.state.php; var bonus=Math.floor(lost/5); g.dealDamageToPlayer(8+bonus); g.log("终极压榨"+(8+bonus)+"伤害(+"+bonus+"加成)","damage"); }
-      else { if(it.dmg) g.dealDamageToPlayer(it.dmg); if(it.discardAll){ g.state.disc.push.apply(g.state.disc,g.state.hand); g.state.hand=[]; g.log("被迫弃全部手牌","event"); updateHand(); } }
+      else { if(it.dmg) g.dealDamageToPlayer(it.dmg); if(it.discardAll){ g.state.disc.push.apply(g.state.disc,g.state.hand); g.state.hand=[]; g.log("被迫弃全部手牌","event"); g.updateHand(); } }
     },
-    getIL:function(){ return this.ints[g.state.biIdx%5].label; }
+    getIL:function(g, e){ return this.ints[g.state.biIdx%5].label; }
   },
 };
 // ===== EVENTS =====
@@ -343,13 +414,13 @@ class GameState {
     this.stress = 0;
     this.deck = [];
     this.hand = [];
-    this.dp = [];       // draw pile
+           // draw pile
     this.disc = [];     // discard pile
     this.ene = null;    // current enemy/boss
     this.boss = false;
     this.go = false;    // game over flag
     this.biIdx = 0;     // boss intent index
-    this.relics = ['降压药', '机械键盘'];
+    this.relics = [RELICS[2]]; // start with 降压药
     this.t = 1;
     this.tempDmgMult = 0;
     this.nextBattleBonusDmg = 0;
@@ -359,6 +430,8 @@ class GameState {
     this.bossDamageMult = 1;
     this.ic = false;    // in combat
     this.noShieldTurns = 0;
+    this.noDrawThisTurn = false;
+    this.immuneThisTurn = false;
     this.playerWeak = 0;
     this.breakdown = false;
   }
@@ -374,8 +447,7 @@ class GameState {
     this.stress = 0;
     this.deck = mkDeck();
     this.hand = [];
-    this.dp = [];
-    this.disc = [];
+        this.disc = [];
     this.ene = null;
     this.boss = false;
     this.go = false;
@@ -389,6 +461,8 @@ class GameState {
     this.bossDamageMult = 1;
     this.ic = false;
     this.noShieldTurns = 0;
+    this.noDrawThisTurn = false;
+    this.immuneThisTurn = false;
     this.playerWeak = 0;
     this.breakdown = false;
   }
@@ -399,11 +473,26 @@ class GameState {
     this.sh = 0;
     this.tempDmgMult = 0;
     this.noShieldTurns = 0;
+    this.noDrawThisTurn = false;
+    this.immuneThisTurn = false;
     this.playerWeak = 0;
     this.breakdown = false;
-    this.dp = shuffle(this.deck.slice());
-    this.hand = [];
+        this.hand = [];
     this.disc = [];
+  }
+
+  // Full battle cleanup (win/lose/retreat)
+  clearBattle() {
+    this.ene = null;
+    this.ic = false;
+    this.biIdx = 0;
+    this.tempDmgMult = 0;
+    this.noShieldTurns = 0;
+    this.noDrawThisTurn = false;
+    this.immuneThisTurn = false;
+    this.playerWeak = 0;
+    this.breakdown = false;
+    this._pendingKill = false;
   }
 
   nextTurn() {
@@ -422,40 +511,46 @@ var s = new GameState();
 
 
 // ===== CONTEXT (unified g object for all action handlers) =====
-function createCtx() {
+// Unified ctx factory — fresh each call, always includes all needed functions
+function makeCtx() {
   return {
-    // --- state shortcuts (read-only preferred) ---
-    get day() { return s.day; },
-    get hp() { return s.php; },
-    get maxHp() { return s.pmax; },
-    get energy() { return s.en; },
-    get maxEnergy() { return s.men; },
-    get shield() { return s.sh; },
-    get stress() { return s.stress; },
-    get hand() { return s.hand; },
-    get discard() { return s.disc; },
-    get deck() { return s.deck; },
-    get enemy() { return s.ene; },
-    get isBoss() { return s.boss; },
-    get relics() { return s.relics; },
-
-    // --- mutators (always go through GameState) ---
-    addStress: addStress,
-    heal: heal,
-    gainShield: gainShield,
-    modifyEnergy: modifyEnergy,
-    drawCards: drawCards,
+    // --- read-only state shortcuts ---
+    get day()          { return s.day; },
+    get hp()           { return s.php; },
+    get maxHp()        { return s.pmax; },
+    get energy()       { return s.en; },
+    get maxEnergy()    { return s.men; },
+    get shield()       { return s.sh; },
+    get stress()       { return s.stress; },
+    get hand()         { return s.hand; },
+    get discard()      { return s.disc; },
+    get deck()         { return s.deck; },
+    get enemy()        { return s.ene; },
+    get isBoss()       { return s.boss; },
+    get relics()        { return s.relics; },
+    get biIdx()        { return s.biIdx; },
+    get bossDamageMult()   { return s.bossDamageMult; },
+    get skipNextEvent()    { return s.skipNextEvent; },
+    get nextBattleBonusDmg() { return s.nextBattleBonusDmg; },
+    get nextBattleDraw()   { return s.nextBattleDraw; },
+    // --- mutators ---
+    addStress:         addStress,
+    heal:              heal,
+    gainShield:        gainShield,
+    modifyEnergy:      modifyEnergy,
+    drawCards:         drawCards,
     dealDamageToEnemy: dealDamageToEnemy,
-    applyWeak: applyWeak,
-    shuffle: shuffle,
-
+    applyWeak:         applyWeak,
+    applyPoison:       applyPoison,
+    dealDamageToPlayer: dealDamageToPlayer,
+    triggerRelic:      triggerRelic,
+    updateHand:        updateHand,
+    shuffle:           shuffle,
     // --- utilities ---
-    log: log,
-    state: s,   // direct state access for advanced use
+    log:               log,
+    state:             s,
   };
 }
-
-var ctx = createCtx();
 
 function mkDeck(){
   var d=[];
@@ -490,15 +585,20 @@ function retryBoss(){
 }
 
 function nextDay(){
+  triggerRelic("onDayEnd");
   s.day++;
   if(s.day>5){ showScreen("finalwin"); return; }
+  triggerRelic("onDayStart");
   s.idx=0;s.stress=0;s.skipNextEvent=false;s.bossDamageMult=1;s.en=3;s.men=3;
   hideAll();showScreen("day-transition");updateDayProgress();
   document.getElementById("day-banner").textContent="Day "+s.day;
   document.getElementById("time-label").textContent="09:00";
 }
 
-function winGameEarly(){ showScreen("finalwin"); }
+function winGameEarly(){
+  s.go=true;s.clearBattle();
+  setTimeout(function(){ showScreen("finalwin"); },300);
+}
 
 function updateDayProgress(){
   var el=document.getElementById("day-progress");
@@ -548,8 +648,9 @@ function handleLunch(){
   var healAmt=s.day>=5?15:(s.day>=3?12:10);
   heal(healAmt);
   s.stress=Math.max(0,s.stress-2);
-  if(s.day>=5){ s.stress=0;log("周五午餐！压力清零！","heal"); }
-  else { log("午餐时间！回复"+healAmt+"HP，压力-2","heal"); }
+  s.en=s.men; // 刷新能量
+  if(s.day>=5){ s.stress=0;log("周五午餐！压力清零，能量已刷新！","heal"); }
+  else { log("午餐时间！回复"+healAmt+"HP，压力-2，能量已刷新","heal"); }
   updateAll();
   setTimeout(function(){ advanceEvent(); },900);
 }
@@ -560,11 +661,12 @@ function startFight(key){
   var hpMult=[1,1.1,1.2,1.3,1.5][s.day-1]||1;
   s.resetForBattle();
   s.boss=false;s.ic=true;
-  s.ene={name:e.name,emoji:e.emoji,maxHp:Math.floor(e.maxHp*hpMult),hp:Math.floor(e.maxHp*hpMult),weak:0,shield:0,armor:0,isElite:e.isElite||false,canWeaken:e.canWeaken,getIL:e.getIL,onTurn:e.onTurn};
+  s.ene={name:e.name,emoji:e.emoji,maxHp:Math.floor(e.maxHp*hpMult),hp:Math.floor(e.maxHp*hpMult),weak:0,shield:0,armor:0,poison:0,isElite:e.isElite||false,canWeaken:e.canWeaken,getIL:e.getIL,onTurn:e.onTurn};
   if(s.nextBattleBonusDmg){ s.tempDmgMult+=(s.nextBattleBonusDmg/8);s.nextBattleBonusDmg=0; }
   if(s.nextBattleStress){ s.stress+=s.nextBattleStress;s.nextBattleStress=0; }
   var drawN=5+(s.nextBattleDraw||0);s.nextBattleDraw=0;
   drawCards(drawN);
+  triggerRelic("onBattleStart");
   updateEnemyDisplay();updateAll();
   log(e.name+" 出现了！","event");
 }
@@ -575,8 +677,10 @@ function startBoss(key){
   var hpMult=[1,1.1,1.2,1.3,1.5][s.day-1]||1;
   s.resetForBattle();
   s.boss=true;s.ic=true;s.biIdx=0;
-  s.ene={name:b.name,emoji:b.emoji,maxHp:Math.floor(b.maxHp*hpMult),hp:Math.floor(b.maxHp*hpMult),weak:0,shield:0,armor:0,charge:0,ints:b.ints,onTurn:b.onTurn,getIL:b.getIL};
+  s.ene={name:b.name,emoji:b.emoji,maxHp:Math.floor(b.maxHp*hpMult),hp:Math.floor(b.maxHp*hpMult),weak:0,shield:0,armor:0,charge:0,poison:0,ints:b.ints,onTurn:b.onTurn,getIL:b.getIL};
+  if(s.nextBattleBonusDmg){ s.tempDmgMult+=(s.nextBattleBonusDmg/8);s.nextBattleBonusDmg=0; }
   drawCards(5);
+  triggerRelic("onBattleStart");
   updateEnemyDisplay();updateAll();
   log("BOSS战："+b.name+"！","event");
 }
@@ -592,7 +696,7 @@ function showChoice(ev){
     btn.className="choice-btn";
     btn.textContent=c.text;
     btn.onclick=function(){
-      c.ef(ctx);
+      c.ef(makeCtx());
       hideAll();showScreen("battle-ui");updateAll();advanceEvent();
     };
     btns.appendChild(btn);
@@ -606,30 +710,53 @@ function playCard(idx){
   if(!card) return;
   if(card.cost>s.en) return;
   s.en-=card.cost;
+  s._pendingKill=false;
   var hel=document.getElementById("hand");
   if(hel&&hel.children[idx]) hel.children[idx].classList.add("playing");
   setTimeout(function(){
-    card.action(ctx);
+    var ac=makeCtx();   // fresh ctx so applyPoison etc. always available
+    card.action(ac);
     s.hand.splice(idx,1);
     s.disc.push(card);
     updateAll();
-    if(s.ene&&s.ene.hp<=0) win();
+    if(s._pendingKill&&s.ic){ s._pendingKill=false; win(); }
   },150);
 }
 
 function endTurn(){
   if(s.go||!s.ic) return;
+  s._pendingKill=false;
+  log("--- 回合 "+s.t+" 结束 ---","turn");
+  s.t++;
   if(s.breakdown){
     s.breakdown=false;s.stress=5;
-    log("崩溃结束，压力回落至5","stress");
+    log("崩溃！本回合伤害x2.5！","breakdown");
     document.body.classList.remove("breakdown");
   }
+  // Apply poison at start of enemy turn
+  if(s.ene&&s.ene.poison>0){
+    var pdmg=s.ene.poison;
+    if(hasRelic("jiangyan")) pdmg+=2; // 降噪耳机
+    s.ene.hp-=pdmg;
+    log("中毒发作！"+pdmg+"伤害","special");
+    showDmgPopup(document.getElementById("enemy-sprite"),pdmg);
+    if(s.ene.hp<=0){ win();return; }
+  }
+  if(typeof s === 'undefined') { console.error('FATAL: s is undefined in endTurn!'); return; }
   try{
     if(s.ene && s.ene.onTurn){
-      s.ene.onTurn.call(s.ene,{dealDamageToPlayer:dealDamageToPlayer,addStress:addStress,drawCards:drawCards,log:log,modifyEnergy:modifyEnergy,state:s,updateHand:updateHand,dealDamageToEnemy:dealDamageToEnemy,applyWeak:applyWeak,ctx:ctx},s.ene);
+      s.ene.onTurn.call(s.ene, makeCtx(), s.ene);
       if(s.ene.hp<=0){ win();return; }
     }
-  }catch(e){ log("BOSS行动出错:"+e.message,"damage"); }
+  }catch(e){
+    console.error("=== BOSS ACT ERROR ===");
+    console.error("s exists:", typeof s !== 'undefined', "s:", s);
+    console.error("s.ene:", typeof s !== 'undefined' ? s.ene : 'N/A');
+    console.error("Error:", e.message, "Stack:", e.stack);
+    log("BOSS行动出错:"+e.message,"damage");
+  }
+  if(s._pendingKill&&s.ic){ s._pendingKill=false; win(); return; }
+  if(!s.ic) return;   // battle ended (win/lose triggered above)
   s.nextTurn();
   s.disc=s.disc.concat(s.hand);s.hand=[];
   var drawN=5;if(s.stress>=7) drawN++;
@@ -639,10 +766,10 @@ function endTurn(){
 }
 
 function dealDamageToEnemy(n){
-  if(!s.ene) return;
+  if(!s.ene) return false;
   var e=s.ene;
   var bonus=0;
-  if(s.relics&&s.relics.indexOf("机械键盘")>-1) bonus+=2;
+  if(hasRelic("jixie")) bonus+=2;
   var wm=(e.weak&&e.weak>0)?Math.pow(0.75,e.weak):1;
   var fd=Math.floor((n+bonus)*wm);
   var sm=1;
@@ -659,13 +786,15 @@ function dealDamageToEnemy(n){
   var wstr=e.weak>0?" (剩"+e.weak+"层虚弱)":"";
   log("造成"+fd+"伤害"+wstr+(sm>1?" ("+Math.round((sm-1)*100)+"%愤怒)":""),"damage");
   updateEnemyDisplay();
-  if(e.hp<=0) win();
+  s._pendingKill=(e.hp<=0); // mark kill for post-action check
+  return (e.hp<=0);
 }
 
 function dealDamageToPlayer(n){
+  if(s.immuneThisTurn){ log("准时下班！免疫本次攻击","special"); s.immuneThisTurn=false; return; }
   if(s.sh>0){var ab=Math.min(s.sh,n);s.sh-=ab;n-=ab;if(ab>0){showDmgPopup(document.getElementById("shield"),ab,true);log("护盾抵消"+ab,"heal");}}
   if(n>0){
-    if(s.relics&&s.relics.indexOf("人体工学椅")>-1) n=Math.min(n,12);
+    n=triggerRelic("onDamaged",n);
     if(s.playerWeak>0){ n=Math.floor(n*0.75); }
     s.php=Math.max(0,s.php-n);
     showDmgPopup(document.getElementById("hp"),n);
@@ -701,12 +830,19 @@ function applyWeak(n){
   log(s.ene.name+" 获得"+n+"层虚弱","event");
 }
 
+function applyPoison(n){
+  if(!s.ene) return;
+  s.ene.poison=(s.ene.poison||0)+n;
+  log(s.ene.name+" 中毒 +"+n+"层（每回合"+n+"伤害）","special");
+}
+
 function gainShield(n){
   if(s.noShieldTurns>0){ log("本回合无法获得护盾！","stress"); return; }
   s.sh+=n;log("护盾 +"+n,"heal");
 }
 
 function heal(n){
+  if(hasRelic("renshen")) n=Math.min(n,12);
   var old=s.php;s.php=Math.min(s.pmax,s.php+n);
   var healed=s.php-old;
   if(healed>0) log("治疗 "+healed+" HP","heal");
@@ -722,8 +858,8 @@ function addStress(n){
 
 function drawCards(n){
   for(var i=0;i<n;i++){
-    if(s.dp.length===0){if(s.disc.length===0) return;s.dp=shuffle(s.disc.slice());s.disc=[];log("牌堆洗牌","turn");}
-    var card=s.dp.pop();
+    
+    var card=s.deck.pop();
     if(card) s.hand.push(card);
   }
   updateHand();
@@ -735,35 +871,129 @@ function shuffle(arr){
 }
 
 function win(){
-  if(s.go) return;s.ic=false;
+  if(s.go) return;s.clearBattle();
+  triggerRelic("onFightWin");
   if(s.boss){
     if(s.day>=5){setTimeout(function(){ showScreen("finalwin"); },500);}
-    else {setTimeout(function(){document.getElementById("dayclear-title").textContent="Day "+s.day+" 完成！";document.getElementById("dayclear-sub").textContent="今天准时下班了，明天继续";showScreen("dayclear-screen");},500);}
+    else {
+      // After boss win: show relic choice, then dayclear
+      setTimeout(function(){
+        var dayTitles=["","Day 1 完成！","Day 2 完成！","Day 3 完成！","Day 4 完成！","通关！"];
+        document.getElementById("dayclear-title").textContent=dayTitles[s.day]||"完成！";
+        document.getElementById("dayclear-sub").textContent="今天准时下班了，明天继续";
+        // Show relic screen then dayclear
+        if(s.day===1&&s.relics.length<10){
+          var pool=RELICS.filter(function(r){ return !hasRelic(r.id); });
+          if(pool.length>0){ showRelicScreen(); }
+        }
+        showScreen("dayclear-screen");
+      },500);
+    }
     return;
   }
   showRewardScreen();
 }
 
 function lose(){
-  s.go=true;s.ic=false;
+  s.go=true;s.clearBattle();
   document.body.classList.remove("breakdown");
   document.getElementById("lose-reason").textContent="在第"+s.day+"天倒下了";
   setTimeout(function(){ showScreen("lose-screen"); },300);
 }
 
-function showRewardScreen(){
-  var rewards=[deepCopy(CP.zhoubao),deepCopy(CP.chongci),deepCopy(CP.tiaoxin)];
-  var section=document.getElementById("reward-section");
-  section.innerHTML='<div style="color:#ffc107;margin-bottom:10px">选择1张卡加入牌组</div>';
-  var cardsDiv=document.createElement("div");cardsDiv.className="reward-cards";
-  rewards.forEach(function(card,idx){
-    var cardEl=createCardEl(card,idx);
-    cardEl.onclick=function(){s.deck.push(deepCopy(card));hideAll();showScreen("battle-ui");advanceEvent();};
-    cardsDiv.appendChild(cardEl);
-  });
-  section.appendChild(cardsDiv);
-  setTimeout(function(){ showScreen("win-screen"); },300);
+function showRelicScreen(){
+  if(s.day===1&&s.boss&&s.relics.length<10){
+    var pool=RELICS.filter(function(r){ return !hasRelic(r.id); });
+    if(pool.length===0){ showRewardScreen(); return; }
+    var choices=[];
+    while(choices.length<3&&pool.length>0){
+      var idx=Math.floor(Math.random()*pool.length);
+      choices.push(pool.splice(idx,1)[0]);
+    }
+    var container=document.getElementById("relic-options");
+    container.innerHTML="";
+    choices.forEach(function(r){
+      var el=document.createElement("div");
+      el.className="relic-choice";
+      el.innerHTML="<div style='font-size:2rem'>"+r.emoji+"</div><div style='color:#fff;font-weight:700;margin:6px 0'>"+r.name+"</div><div style='color:#aaa;font-size:.75rem'>"+r.desc+"</div>";
+      el.onclick=function(){
+        s.relics.push(deepCopy(r));
+        hideAll();showScreen("battle-ui");updateAll();
+        setTimeout(function(){ showRewardScreen(); },200);
+      };
+      container.appendChild(el);
+    });
+    setTimeout(function(){ showScreen("relic-screen"); },300);
+  } else {
+    showRewardScreen();
+  }
 }
+
+function skipRelic(){
+  hideAll();showScreen("battle-ui");
+  setTimeout(function(){ showRewardScreen(); },200);
+}
+
+function showRewardScreen(){
+  var section=document.getElementById("reward-section");
+  section.innerHTML='<div style="color:#ffc107;margin-bottom:6px">选择奖励</div><div style="display:flex;gap:8px;margin-bottom:8px" id="reward-tabs"><button class="screen-btn" style="flex:1" id="tab-cards" onclick="showCardRewards()">选择卡牌</button><button class="screen-btn" style="flex:1;opacity:.6" id="tab-relics" onclick="showRelicRewards()">选择遗物</button></div><div id="reward-content"></div>';
+  window._rewardMode="cards";
+  window._pendingAdvance=true;
+  setTimeout(function(){ showScreen("win-screen"); },100);
+}
+
+function showCardRewards(){
+  var rewards=[deepCopy(CP.zhoubao),deepCopy(CP.chongci),deepCopy(CP.tiaoxin)];
+  var content=document.getElementById("reward-content");
+  content.innerHTML="";
+  rewards.forEach(function(card){
+    var cardEl=createCardEl(card,0);
+    cardEl.onclick=function(){
+      s.deck.push(deepCopy(card));
+      hideAll();showScreen("battle-ui");
+      if(window._pendingAdvance) advanceEvent();
+    };
+    content.appendChild(cardEl);
+  });
+  document.getElementById("tab-cards").style.opacity="1";
+  document.getElementById("tab-relics").style.opacity=".6";
+  window._rewardMode="cards";
+}
+
+function showRelicRewards(){
+  var pool=RELICS.filter(function(r){ return !hasRelic(r.id)&&r.rarity<=2; });
+  if(pool.length===0){
+    var content=document.getElementById("reward-content");
+    content.innerHTML="<div style='color:#888;text-align:center;padding:20px'>暂无可选遗物</div>";
+    return;
+  }
+  var choices=[];
+  var p=pool.slice();
+  while(choices.length<3&&p.length>0){
+    var idx=Math.floor(Math.random()*p.length);
+    choices.push(p.splice(idx,1)[0]);
+  }
+  var content=document.getElementById("reward-content");
+  content.innerHTML="";
+  choices.forEach(function(r){
+    var el=document.createElement("div");
+    el.className="relic-choice";
+    el.innerHTML="<div style='font-size:2rem'>"+r.emoji+"</div><div style='color:#fff;font-weight:700;margin:6px 0'>"+r.name+"</div><div style='color:#aaa;font-size:.75rem'>"+r.desc+"</div>";
+    el.onclick=function(){
+      s.relics.push(deepCopy(r));
+      hideAll();showScreen("battle-ui");
+      if(window._pendingAdvance) advanceEvent();
+    };
+    content.appendChild(el);
+  });
+  document.getElementById("tab-cards").style.opacity=".6";
+  document.getElementById("tab-relics").style.opacity="1";
+  window._rewardMode="relics";
+}
+
+// Auto-show cards on load
+window._rewardMode="cards";
+window._pendingAdvance=true;
 
 function endDay(){
   if(s.day>=5){showScreen("finalwin");}
@@ -796,36 +1026,43 @@ function createCardEl(card,idx){
   var costCls="cost-"+Math.min(card.cost,3);
   el.className="card "+costCls;
   var costColor=["#4ade80","#60a5fa","#fb923c","#f472b6","#a78bfa"][Math.min(card.cost,4)];
-  el.innerHTML='<div class="card-cost" style="background:'+costColor+'">'+card.cost+'</div><div class="card-name">'+card.name+'</div><div class="card-effect">'+card.effect+'</div>';
+  var typeLabel={'attack':'攻击','skill':'技能','power':'能力','curse':'诅咒'}[card.type]||'技能';
+  var typeCls={'attack':'type-attack','skill':'type-skill','power':'type-power','curse':'type-curse'}[card.type]||'type-skill';
+  el.innerHTML='<div class="card-cost" style="background:'+costColor+'">'+card.cost+'</div><div class="card-name">'+card.name+'</div><div class="card-effect">'+card.effect+'</div><div class="card-type '+typeCls+'">'+typeLabel+'</div>';
   return el;
 }
 
 function updateEnemyDisplay(){
   if(!s.ene) return;
   document.getElementById("enemy-sprite").textContent=s.ene.emoji;
-  document.getElementById("enemy-name").textContent=s.ene.name;
+  var poisonStr=s.ene.poison>0?" 🧪×"+s.ene.poison:"";
+  document.getElementById("enemy-name").textContent=s.ene.name+poisonStr;
   var pct=Math.max(0,(s.ene.hp/s.ene.maxHp)*100);
-  document.getElementById("enemy-hp-fill").style.width=pct+"%";
+  var hpFill=document.getElementById("enemy-hp-fill");
+  hpFill.style.width=pct+"%";
+  hpFill.style.background=s.ene.poison>0?"linear-gradient(90deg,#e94560,#4ecdc4)":"#e94560";
   var intentEl=document.getElementById("enemy-intent");
-  if(s.boss&&s.ene.getIL){intentEl.textContent=s.ene.getIL(s.ene);}
-  else if(s.ene.getIL){intentEl.textContent=s.ene.getIL();}
+  if(s.ene&&s.ene.getIL){intentEl.textContent=s.ene.getIL(makeCtx(),s.ene);}
 }
 
 function updateRelics(){
   var el=document.getElementById("relic-display");
   if(!el) return;
-  el.innerHTML=(s.relics||[]).map(function(r){ return '<span class="relic-tag">'+r+'</span>'; }).join("");
+  el.innerHTML=(s.relics||[]).map(function(r){ return '<span class="relic-tag" title="'+(r.desc||'')+'">'+(r.emoji||'')+' '+r.name+'</span>'; }).join("");
 }
 
 function log(msg,type){
   type=type||"";
+  var icons={"":"","damage":"⚔️","heal":"💚","stress":"😰","event":"📌","turn":"🔄","player":"🃏","breakdown":"💥","special":"🌟"};
+  var icon=icons[type]||"";
   var logEl=document.getElementById("log");
   if(!logEl) return;
   var entry=document.createElement("div");
-  entry.className="log-entry "+type;entry.textContent=msg;
+  entry.className="log-entry "+type;
+  entry.innerHTML=(icon?"<span class='log-icon'>"+icon+"</span> ":"")+"<span>"+msg+"</span>";
   logEl.appendChild(entry);
   logEl.scrollTop=logEl.scrollHeight;
-  while(logEl.children.length>50) logEl.removeChild(logEl.firstChild);
+  while(logEl.children.length>60) logEl.removeChild(logEl.firstChild);
 }
 
 return{
@@ -834,10 +1071,16 @@ return{
   modifyEnergy:modifyEnergy,drawCards:drawCards,dealDamageToEnemy:dealDamageToEnemy,dealDamageToPlayer:dealDamageToPlayer,
   applyWeak:applyWeak,log:log,updateAll:updateAll,updateHand:updateHand,updateEnemyDisplay:updateEnemyDisplay,
   state:s,
+  skipRelic:skipRelic,
   _el:function(id){return document.getElementById(id);},
   _showDmgPopup:showDmgPopup,
 };
 })();
 </script>
+<div class="screen-overlay hidden" id="relic-screen">
+  <div class="screen-title" style="color:#ffc107">选择一个遗物</div>
+  <div id="relic-options" style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin:20px 0"></div>
+  <button class="screen-btn" onclick="game.skipRelic()">跳过</button>
+</div>
 </body>
 </html>
