@@ -648,12 +648,7 @@ function processCurrentEvent(){
   else if(ev.type==="ch"){ showChoice(ev); }
 }
 
-function advanceEvent(){
-  s.idx++;
-  var evts=EVENTS[s.day];
-  if(!evts||s.idx>=evts.length){ endDay(); return; }
-  processCurrentEvent();
-}
+function advanceEvent(){ s.idx++;processCurrentEvent(); }
 
 function handleLunch(){
   var healAmt=s.day>=5?15:(s.day>=3?12:10);
@@ -975,7 +970,7 @@ function skipRelic(){
 
 function showRewardScreen(){
   var section=document.getElementById("reward-section");
-  section.innerHTML='<div style="color:#ffc107;margin-bottom:6px">选择奖励</div><div style="display:flex;gap:8px;margin-bottom:8px" id="reward-tabs"><button class="screen-btn" style="flex:1" id="tab-cards" onclick="showCardRewards()">选择卡牌</button><button class="screen-btn" style="flex:1;opacity:.6" id="tab-relics" onclick="showRelicRewards()">选择遗物</button></div><div id="reward-content"></div>';
+  section.innerHTML='<div style="color:#ffc107;margin-bottom:6px">选择奖励</div><div style="display:flex;gap:8px;margin-bottom:8px" id="reward-tabs"><button class="screen-btn" style="flex:1" id="tab-cards" onclick="game.showCardRewards()">选择卡牌</button><button class="screen-btn" style="flex:1;opacity:.6" id="tab-relics" onclick="game.showRelicRewards()">选择遗物</button></div><div id="reward-content"></div>';
   window._rewardMode="cards";
   window._pendingAdvance=true;
   setTimeout(function(){ hideAll();showScreen("win-screen"); },100);
