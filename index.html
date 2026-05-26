@@ -330,7 +330,132 @@ var EVENTS = {
 
 // ===== GAME =====
 var game = (function(){
-var s;
+// ===== GAME STATE =====
+class GameState {
+  constructor() {
+    this.day = 1;
+    this.idx = 0;
+    this.php = 50;
+    this.pmax = 50;
+    this.en = 3;
+    this.men = 3;
+    this.sh = 0;
+    this.stress = 0;
+    this.deck = [];
+    this.hand = [];
+    this.dp = [];       // draw pile
+    this.disc = [];     // discard pile
+    this.ene = null;    // current enemy/boss
+    this.boss = false;
+    this.go = false;    // game over flag
+    this.biIdx = 0;     // boss intent index
+    this.relics = ['降压药', '机械键盘'];
+    this.t = 1;
+    this.tempDmgMult = 0;
+    this.nextBattleBonusDmg = 0;
+    this.nextBattleDraw = 0;
+    this.nextBattleStress = 0;
+    this.skipNextEvent = false;
+    this.bossDamageMult = 1;
+    this.ic = false;    // in combat
+    this.noShieldTurns = 0;
+    this.playerWeak = 0;
+    this.breakdown = false;
+  }
+
+  reset() {
+    this.day = 1;
+    this.idx = 0;
+    this.php = 50;
+    this.pmax = 50;
+    this.en = 3;
+    this.men = 3;
+    this.sh = 0;
+    this.stress = 0;
+    this.deck = mkDeck();
+    this.hand = [];
+    this.dp = [];
+    this.disc = [];
+    this.ene = null;
+    this.boss = false;
+    this.go = false;
+    this.biIdx = 0;
+    this.t = 1;
+    this.tempDmgMult = 0;
+    this.nextBattleBonusDmg = 0;
+    this.nextBattleDraw = 0;
+    this.nextBattleStress = 0;
+    this.skipNextEvent = false;
+    this.bossDamageMult = 1;
+    this.ic = false;
+    this.noShieldTurns = 0;
+    this.playerWeak = 0;
+    this.breakdown = false;
+  }
+
+  resetForBattle() {
+    this.en = 3;
+    this.men = 3;
+    this.sh = 0;
+    this.tempDmgMult = 0;
+    this.noShieldTurns = 0;
+    this.playerWeak = 0;
+    this.breakdown = false;
+    this.dp = shuffle(this.deck.slice());
+    this.hand = [];
+    this.disc = [];
+  }
+
+  nextTurn() {
+    this.biIdx++;
+    this.en = 3;
+    this.men = 3;
+    this.sh = 0;
+    this.tempDmgMult = 0;
+    this.noShieldTurns = Math.max(0, this.noShieldTurns - 1);
+    this.playerWeak = Math.max(0, this.playerWeak - 1);
+    this.breakdown = false;
+  }
+}
+
+var s = new GameState();
+
+
+// ===== CONTEXT (unified g object for all action handlers) =====
+function createCtx() {
+  return {
+    // --- state shortcuts (read-only preferred) ---
+    get day() { return s.day; },
+    get hp() { return s.php; },
+    get maxHp() { return s.pmax; },
+    get energy() { return s.en; },
+    get maxEnergy() { return s.men; },
+    get shield() { return s.sh; },
+    get stress() { return s.stress; },
+    get hand() { return s.hand; },
+    get discard() { return s.disc; },
+    get deck() { return s.deck; },
+    get enemy() { return s.ene; },
+    get isBoss() { return s.boss; },
+    get relics() { return s.relics; },
+
+    // --- mutators (always go through GameState) ---
+    addStress: addStress,
+    heal: heal,
+    gainShield: gainShield,
+    modifyEnergy: modifyEnergy,
+    drawCards: drawCards,
+    dealDamageToEnemy: dealDamageToEnemy,
+    applyWeak: applyWeak,
+    shuffle: shuffle,
+
+    // --- utilities ---
+    log: log,
+    state: s,   // direct state access for advanced use
+  };
+}
+
+var ctx = createCtx();
 
 function mkDeck(){
   var d=[];
@@ -345,7 +470,7 @@ function mkDeck(){
 }
 
 function startGame(){
-  s={day:1,idx:0,php:50,pmax:50,en:3,men:3,sh:0,stress:0,deck:mkDeck(),hand:[],dp:[],disc:[],ene:null,boss:false,go:false,biIdx:0,relics:["降压药","机械键盘"],t:1,tempDmgMult:0,nextBattleBonusDmg:0,nextBattleDraw:0,nextBattleStress:0,skipNextEvent:false,bossDamageMult:1,ic:false,noShieldTurns:0,playerWeak:0};
+  s.reset();
   hideAll();
   showScreen("day-transition");
   updateDayProgress();
@@ -433,11 +558,11 @@ function startFight(key){
   var e=EN[key];
   if(!e) return;
   var hpMult=[1,1.1,1.2,1.3,1.5][s.day-1]||1;
+  s.resetForBattle();
+  s.boss=false;s.ic=true;
   s.ene={name:e.name,emoji:e.emoji,maxHp:Math.floor(e.maxHp*hpMult),hp:Math.floor(e.maxHp*hpMult),weak:0,shield:0,armor:0,isElite:e.isElite||false,canWeaken:e.canWeaken,getIL:e.getIL,onTurn:e.onTurn};
-  s.boss=false;s.ic=true;s.en=3;s.men=3;s.sh=0;s.tempDmgMult=0;s.noShieldTurns=0;s.playerWeak=0;
   if(s.nextBattleBonusDmg){ s.tempDmgMult+=(s.nextBattleBonusDmg/8);s.nextBattleBonusDmg=0; }
   if(s.nextBattleStress){ s.stress+=s.nextBattleStress;s.nextBattleStress=0; }
-  s.dp=shuffle(s.deck.slice());s.hand=[];s.disc=[];
   var drawN=5+(s.nextBattleDraw||0);s.nextBattleDraw=0;
   drawCards(drawN);
   updateEnemyDisplay();updateAll();
@@ -448,9 +573,9 @@ function startBoss(key){
   var b=BD[key];
   if(!b) return;
   var hpMult=[1,1.1,1.2,1.3,1.5][s.day-1]||1;
+  s.resetForBattle();
+  s.boss=true;s.ic=true;s.biIdx=0;
   s.ene={name:b.name,emoji:b.emoji,maxHp:Math.floor(b.maxHp*hpMult),hp:Math.floor(b.maxHp*hpMult),weak:0,shield:0,armor:0,charge:0,ints:b.ints,onTurn:b.onTurn,getIL:b.getIL};
-  s.boss=true;s.ic=true;s.biIdx=0;s.en=3;s.men=3;s.sh=0;s.tempDmgMult=0;s.noShieldTurns=0;s.playerWeak=0;
-  s.dp=shuffle(s.deck.slice());s.hand=[];s.disc=[];
   drawCards(5);
   updateEnemyDisplay();updateAll();
   log("BOSS战："+b.name+"！","event");
@@ -467,7 +592,7 @@ function showChoice(ev){
     btn.className="choice-btn";
     btn.textContent=c.text;
     btn.onclick=function(){
-      c.ef({addStress:addStress,heal:heal,gainShield:gainShield,modifyEnergy:modifyEnergy,drawCards:drawCards,log:log,state:s,deck:s.deck,applyWeak:applyWeak,dealDamageToEnemy:dealDamageToEnemy,winGameEarly:winGameEarly});
+      c.ef(ctx);
       hideAll();showScreen("battle-ui");updateAll();advanceEvent();
     };
     btns.appendChild(btn);
@@ -483,9 +608,8 @@ function playCard(idx){
   s.en-=card.cost;
   var hel=document.getElementById("hand");
   if(hel&&hel.children[idx]) hel.children[idx].classList.add("playing");
-  var g={addStress:addStress,heal:heal,gainShield:gainShield,modifyEnergy:modifyEnergy,drawCards:drawCards,log:log,state:s,deck:s.deck,applyWeak:applyWeak,dealDamageToEnemy:dealDamageToEnemy,shuffle:shuffle,disc:s.disc};
   setTimeout(function(){
-    card.action(g);
+    card.action(ctx);
     s.hand.splice(idx,1);
     s.disc.push(card);
     updateAll();
@@ -495,16 +619,18 @@ function playCard(idx){
 
 function endTurn(){
   if(s.go||!s.ic) return;
-  if(s.breakdown){s.breakdown=false;s.stress=5;log("崩溃结束，压力回落至5","stress");document.body.classList.remove("breakdown");}
+  if(s.breakdown){
+    s.breakdown=false;s.stress=5;
+    log("崩溃结束，压力回落至5","stress");
+    document.body.classList.remove("breakdown");
+  }
   try{
     if(s.ene && s.ene.onTurn){
-      s.ene.onTurn.call(s.ene,{dealDamageToPlayer:dealDamageToPlayer,addStress:addStress,drawCards:drawCards,log:log,modifyEnergy:modifyEnergy,state:s,updateHand:updateHand,dealDamageToEnemy:dealDamageToEnemy,applyWeak:applyWeak},s.ene);
+      s.ene.onTurn.call(s.ene,{dealDamageToPlayer:dealDamageToPlayer,addStress:addStress,drawCards:drawCards,log:log,modifyEnergy:modifyEnergy,state:s,updateHand:updateHand,dealDamageToEnemy:dealDamageToEnemy,applyWeak:applyWeak,ctx:ctx},s.ene);
       if(s.ene.hp<=0){ win();return; }
     }
   }catch(e){ log("BOSS行动出错:"+e.message,"damage"); }
-  s.biIdx++;s.en=3;s.men=3;s.sh=0;s.tempDmgMult=0;
-  s.noShieldTurns=Math.max(0,s.noShieldTurns-1);
-  s.playerWeak=Math.max(0,s.playerWeak-1);
+  s.nextTurn();
   s.disc=s.disc.concat(s.hand);s.hand=[];
   var drawN=5;if(s.stress>=7) drawN++;
   drawCards(drawN);
