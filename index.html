@@ -873,6 +873,7 @@ function addStress(n){
 }
 
 function drawCards(n){
+  if(s.noDrawThisTurn){ s.noDrawThisTurn=false; updateHand(); return; }
   for(var i=0;i<n;i++){
     if(s.deck.length===0){
       if(s.disc.length===0) break; // nowhere to draw from
