@@ -367,7 +367,7 @@ function retryBoss(){
 function nextDay(){
   s.day++;
   if(s.day>5){ showScreen("finalwin"); return; }
-  s.idx=0;s.stress=0;s.skipNextEvent=false;s.bossDamageMult=1;
+  s.idx=0;s.stress=0;s.skipNextEvent=false;s.bossDamageMult=1;s.en=3;s.men=3;
   hideAll();showScreen("day-transition");updateDayProgress();
   document.getElementById("day-banner").textContent="Day "+s.day;
   document.getElementById("time-label").textContent="09:00";
@@ -434,7 +434,7 @@ function startFight(key){
   if(!e) return;
   var hpMult=[1,1.1,1.2,1.3,1.5][s.day-1]||1;
   s.ene={name:e.name,emoji:e.emoji,maxHp:Math.floor(e.maxHp*hpMult),hp:Math.floor(e.maxHp*hpMult),weak:0,shield:0,armor:0,isElite:e.isElite||false,canWeaken:e.canWeaken,getIL:e.getIL,onTurn:e.onTurn};
-  s.boss=false;s.ic=true;s.en=3;s.sh=0;s.tempDmgMult=0;s.noShieldTurns=0;s.playerWeak=0;
+  s.boss=false;s.ic=true;s.en=3;s.men=3;s.sh=0;s.tempDmgMult=0;s.noShieldTurns=0;s.playerWeak=0;
   if(s.nextBattleBonusDmg){ s.tempDmgMult+=(s.nextBattleBonusDmg/8);s.nextBattleBonusDmg=0; }
   if(s.nextBattleStress){ s.stress+=s.nextBattleStress;s.nextBattleStress=0; }
   s.dp=shuffle(s.deck.slice());s.hand=[];s.disc=[];
@@ -449,7 +449,7 @@ function startBoss(key){
   if(!b) return;
   var hpMult=[1,1.1,1.2,1.3,1.5][s.day-1]||1;
   s.ene={name:b.name,emoji:b.emoji,maxHp:Math.floor(b.maxHp*hpMult),hp:Math.floor(b.maxHp*hpMult),weak:0,shield:0,armor:0,charge:0,ints:b.ints,onTurn:b.onTurn,getIL:b.getIL};
-  s.boss=true;s.ic=true;s.biIdx=0;s.en=3;s.sh=0;s.tempDmgMult=0;s.noShieldTurns=0;s.playerWeak=0;
+  s.boss=true;s.ic=true;s.biIdx=0;s.en=3;s.men=3;s.sh=0;s.tempDmgMult=0;s.noShieldTurns=0;s.playerWeak=0;
   s.dp=shuffle(s.deck.slice());s.hand=[];s.disc=[];
   drawCards(5);
   updateEnemyDisplay();updateAll();
@@ -496,11 +496,13 @@ function playCard(idx){
 function endTurn(){
   if(s.go||!s.ic) return;
   if(s.breakdown){s.breakdown=false;s.stress=5;log("崩溃结束，压力回落至5","stress");document.body.classList.remove("breakdown");}
-  if(s.ene){
-    s.ene.onTurn.call(s.ene,{dealDamageToPlayer:dealDamageToPlayer,addStress:addStress,drawCards:drawCards,log:log,modifyEnergy:modifyEnergy,state:s,updateHand:updateHand,dealDamageToEnemy:dealDamageToEnemy,applyWeak:applyWeak},s.ene);
-    if(s.ene.hp<=0){ win();return; }
-  }
-  s.biIdx++;s.en=3;s.sh=0;s.tempDmgMult=0;
+  try{
+    if(s.ene && s.ene.onTurn){
+      s.ene.onTurn.call(s.ene,{dealDamageToPlayer:dealDamageToPlayer,addStress:addStress,drawCards:drawCards,log:log,modifyEnergy:modifyEnergy,state:s,updateHand:updateHand,dealDamageToEnemy:dealDamageToEnemy,applyWeak:applyWeak},s.ene);
+      if(s.ene.hp<=0){ win();return; }
+    }
+  }catch(e){ log("BOSS行动出错:"+e.message,"damage"); }
+  s.biIdx++;s.en=3;s.men=3;s.sh=0;s.tempDmgMult=0;
   s.noShieldTurns=Math.max(0,s.noShieldTurns-1);
   s.playerWeak=Math.max(0,s.playerWeak-1);
   s.disc=s.disc.concat(s.hand);s.hand=[];
@@ -584,7 +586,7 @@ function heal(n){
   if(healed>0) log("治疗 "+healed+" HP","heal");
 }
 
-function modifyEnergy(n){ s.en=Math.max(0,s.en+n); }
+function modifyEnergy(n){ s.en=Math.max(0,s.en+n); updateHUD(); }
 
 function addStress(n){
   var prev=s.stress;s.stress+=n;
