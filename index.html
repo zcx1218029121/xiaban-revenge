@@ -172,15 +172,15 @@ var CP = {
   // === 摸鱼派 ===
   paogouqi: { name:"泡枸杞",   cost:1, type:"skill",  effect:"6护盾+3层中毒",         action:function(g){ g.gainShield(6); g.applyPoison(3); } },
   manxing:  { name:"慢性中毒", cost:2, type:"skill",  effect:"5层中毒，本回合不抽牌",  action:function(g){ g.applyPoison(5); g.state.noDrawThisTurn=true; } },
-  bingjiatiao:{ name:"病假条",  cost:0, type:"skill",  effect:"4护盾，中毒层数越高敌人受伤越多",action:function(g){ g.gainShield(4); var e=g.enemy; if(e&&e.poison>0){ var bonus=e.poison; dealDamageToEnemy(bonus); log("病假加成："+bonus+"额外伤害","special"); updateAll(); } } },
-  zunshixiaban:{ name:"准时下班",cost:0,type:"skill", effect:"本回合不受攻击，-2压力",action:function(g){ g.state.stress=Math.max(0,g.state.stress-2); g.state.immuneThisTurn=true; log("准时下班！本回合免疫攻击","special"); } },
+  bingjiatiao:{ name:"病假条",  cost:0, type:"skill",  effect:"4护盾，中毒层数越高敌人受伤越多",action:function(g){ g.gainShield(4); var e=g.enemy; if(e&&e.poison>0){ var bonus=e.poison; g.dealDamageToEnemy(bonus); g.log("病假加成："+bonus+"额外伤害","special"); g.updateAll(); } } },
+  zunshixiaban:{ name:"准时下班",cost:0,type:"skill", effect:"本回合不受攻击，-2压力",action:function(g){ g.state.stress=Math.max(0,g.state.stress-2); g.state.immuneThisTurn=true; g.log("准时下班！本回合免疫攻击","special"); } },
 };
 // ===== ENEMIES =====
 var EN = {
   xinren:  { name:"职场新人",   emoji:"\uD83D\uDC68\u200D\uD83D\uDCBB", maxHp:15, onTurn:function(g, e){ g.dealDamageToPlayer(5); g.drawCards(1); g.log("新人请教了你","damage"); }, getIL:function(ctx, enemy){ return "\uD83D\uDC47 攻击5+抽1"; } },
   laoyuhua:{ name:"老油条",     emoji:"\uD83D\uDC94",  maxHp:20, canWeaken:false, onTurn:function(g, e){ g.dealDamageToPlayer(8); g.log("老油条推诿甩锅","damage"); }, getIL:function(ctx, enemy){ return "\uD83D\uDC47 攻击8"; } },
   ppt:     { name:"PPT纺织工",  emoji:"\uD83D\uDCCA", maxHp:18, onTurn:function(g, e){ g.dealDamageToPlayer(6); g.log("PPT轰炸了","damage"); }, getIL:function(ctx, enemy){ return "\uD83D\uDCCA 攻击6"; } },
-  youjian: { name:"邮件轰炸机", emoji:"\uD83D\uDCE7",  maxHp:12, onTurn:function(g, e){ var orig=this; setTimeout(function(){ g.dealDamageToPlayer(4); }, 250); g.dealDamageToPlayer(4); g.log("邮件轰炸x2！","damage"); }, getIL:function(ctx, enemy){ return "\uD83D\uDCE7 攻击4x2"; } },
+  youjian: { name:"邮件轰炸机", emoji:"\uD83D\uDCE7",  maxHp:12, onTurn:function(g, e){ var self=this; setTimeout(function(){ if(s.ic) g.dealDamageToPlayer(4); }, 250); g.dealDamageToPlayer(4); g.log("邮件轰炸x2！","damage"); }, getIL:function(ctx, enemy){ return "\uD83D\uDCE7 攻击4x2"; } },
   kaihui:  { name:"开会狂魔",   emoji:"\uD83D\uDDE3\uFE0F", maxHp:22, onTurn:function(g, e){ g.dealDamageToPlayer(5); g.dealDamageToPlayer(5); g.log("全体攻击x2！","damage"); }, getIL:function(ctx, enemy){ return "\uD83D\uDDE3\uFE0F 全体10"; } },
   mapei:   { name:"马屁精",     emoji:"\uD83E\uDD22",  maxHp:18, onTurn:function(g, e){ g.dealDamageToPlayer(7); g.log("马屁攻击","damage"); }, getIL:function(ctx, enemy){ return "\uD83E\uDD22 攻击7"; } },
   mapei_e: { name:"马屁精(精英)",emoji:"\uD83E\uDD22", maxHp:35, isElite:true, onTurn:function(g, e){ g.dealDamageToPlayer(10); g.log("精英马屁攻击！","damage"); }, getIL:function(ctx, enemy){ return "\uD83E\uDD22 精英10"; } },
