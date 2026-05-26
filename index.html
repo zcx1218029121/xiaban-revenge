@@ -595,6 +595,7 @@ function nextDay(){
   if(s.day>5){ showScreen("finalwin"); return; }
   triggerRelic(s,"onDayStart");
   s.idx=0;s.stress=0;s.skipNextEvent=false;s.bossDamageMult=1;s.en=3;s.men=3;
+  window._pendingAdvance=true;
   hideAll();showScreen("day-transition");updateDayProgress();
   document.getElementById("day-banner").textContent="Day "+s.day;
   document.getElementById("time-label").textContent="09:00";
@@ -908,7 +909,7 @@ function win(){
           var pool=RELICS.filter(function(r){ return !hasRelic(s,r.id); });
           if(pool.length>0){ showRelicScreen(); }
         }
-        showScreen("dayclear-screen");
+        hideAll();showScreen("dayclear-screen");
       },500);
     }
     return;
@@ -945,7 +946,7 @@ function showRelicScreen(){
       };
       container.appendChild(el);
     });
-    setTimeout(function(){ showScreen("relic-screen"); },300);
+    setTimeout(function(){ hideAll();showScreen("relic-screen"); },300);
   } else {
     showRewardScreen();
   }
@@ -961,7 +962,7 @@ function showRewardScreen(){
   section.innerHTML='<div style="color:#ffc107;margin-bottom:6px">选择奖励</div><div style="display:flex;gap:8px;margin-bottom:8px" id="reward-tabs"><button class="screen-btn" style="flex:1" id="tab-cards" onclick="showCardRewards()">选择卡牌</button><button class="screen-btn" style="flex:1;opacity:.6" id="tab-relics" onclick="showRelicRewards()">选择遗物</button></div><div id="reward-content"></div>';
   window._rewardMode="cards";
   window._pendingAdvance=true;
-  setTimeout(function(){ showScreen("win-screen"); },100);
+  setTimeout(function(){ hideAll();showScreen("win-screen"); },100);
 }
 
 function showCardRewards(){
@@ -1018,6 +1019,8 @@ window._rewardMode="cards";
 window._pendingAdvance=true;
 
 function endDay(){
+  window._pendingAdvance=false;
+  hideAll();
   if(s.day>=5){showScreen("finalwin");}
   else {document.getElementById("dayclear-title").textContent="Day "+s.day+" 完成！";document.getElementById("dayclear-sub").textContent="今天准时下班了，明天继续";showScreen("dayclear-screen");}
 }
