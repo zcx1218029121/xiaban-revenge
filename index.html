@@ -862,7 +862,11 @@ function addStress(n){
 
 function drawCards(n){
   for(var i=0;i<n;i++){
-    
+    if(s.deck.length===0){
+      if(s.disc.length===0) break; // nowhere to draw from
+      s.deck=shuffle(s.disc.slice()); // reshuffle discard -> deck
+      s.disc=[];
+    }
     var card=s.deck.pop();
     if(card) s.hand.push(card);
   }
