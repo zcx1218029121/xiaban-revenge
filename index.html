@@ -708,22 +708,34 @@ function showChoice(ev){
 }
 
 function playCard(idx){
-  if(s.go||!s.ic) return;
+  if(s.go||!s.ic){ console.warn("playCard: game over or not in combat"); return; }
   if(s.breakdown){ log("崩溃中...无法出牌","stress"); return; }
   var card=s.hand[idx];
-  if(!card) return;
-  if(card.cost>s.en) return;
+  if(!card){ console.warn("playCard: no card at idx",idx); return; }
+  if(card.cost>s.en){ log("能量不足！","event"); return; }
   s.en-=card.cost;
   s._pendingKill=false;
+  // Mark the card element as playing (capture the el before setTimeout)
   var hel=document.getElementById("hand");
-  if(hel&&hel.children[idx]) hel.children[idx].classList.add("playing");
+  var cardEl=hel&&hel.children[idx];
+  if(cardEl) cardEl.classList.add("playing");
   setTimeout(function(){
-    var ac=makeCtx();   // fresh ctx so applyPoison etc. always available
-    card.action(ac);
-    s.hand.splice(idx,1);
-    s.disc.push(card);
-    updateAll();
-    if(s._pendingKill&&s.ic){ s._pendingKill=false; win(); }
+    try{
+      if(!s.ic){ console.warn("playCard setTimeout: not in combat"); return; }
+      // Re-lookup card in hand (may have shifted after concurrent plays)
+      var realIdx=s.hand.indexOf(card);
+      if(realIdx<0){ console.warn("playCard: card already removed"); updateAll(); return; }
+      var ac=makeCtx();
+      card.action(ac);
+      s.hand.splice(realIdx,1);
+      s.disc.push(card);
+      updateAll();
+      if(s._pendingKill&&s.ic){ s._pendingKill=false; win(); }
+    }catch(e){
+      console.error("playCard error:",e);
+      log("卡牌出错:"+e.message,"damage");
+      updateAll();
+    }
   },150);
 }
 
@@ -1050,7 +1062,9 @@ function updateEnemyDisplay(){
   hpFill.style.width=pct+"%";
   hpFill.style.background=s.ene.poison>0?"linear-gradient(90deg,#e94560,#4ecdc4)":"#e94560";
   var intentEl=document.getElementById("enemy-intent");
-  if(s.ene&&s.ene.getIL){intentEl.textContent=s.ene.getIL(makeCtx(),s.ene);}
+  try{
+    if(s.ene&&s.ene.getIL){intentEl.textContent=s.ene.getIL(makeCtx(),s.ene);}
+  }catch(e){ intentEl.textContent="❓"; }
 }
 
 function updateRelics(){
