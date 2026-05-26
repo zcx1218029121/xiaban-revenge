@@ -1,10 +1,13 @@
 // events.js — event system (Phase 2 extraction)
 import { s } from './core.js';
 import { makeCtx } from './ctx.js';
-import { triggerRelic } from './actions.js';
+import { triggerRelic, heal, drawCards } from './actions.js';
 import { log, hideAll, showScreen, updateAll, updateEnemyDisplay } from './ui.js';
 import { RELICS } from '../data/relics.js';
 import { EVENTS } from '../data/events.js';
+import { EN } from '../data/enemies.js';
+import { BD } from '../data/bosses.js';
+import { endDay } from './game.js';
 
 export function processCurrentEvent(){
   var evts=EVENTS[s.day];
@@ -63,7 +66,6 @@ export function startBoss(key){
 
 export function showChoice(ev){
   hideAll();
-  // Clear any leftover enemy display from previous fight
   s.ene=null;
   var enemyNameEl=document.getElementById("enemy-name");
   if(enemyNameEl) enemyNameEl.textContent="";
@@ -89,4 +91,3 @@ export function showChoice(ev){
     btns.appendChild(btn);
   });
 }
-

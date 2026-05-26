@@ -3,6 +3,8 @@ import { s } from './core.js';
 import { triggerRelic } from './actions.js';
 import { log, hideAll, showScreen, updateAll, updateDayProgress } from './ui.js';
 import { RELICS } from '../data/relics.js';
+import { EVENTS } from '../data/events.js';
+import { startBoss, processCurrentEvent } from './events.js';
 
 export function startGame(){
   s.reset();
@@ -53,4 +55,3 @@ export function endDay(){
   if(s.day>=5){showScreen("finalwin");}
   else {document.getElementById("dayclear-title").textContent="Day "+s.day+" 完成！";document.getElementById("dayclear-sub").textContent="今天准时下班了，明天继续";showScreen("dayclear-screen");}
 }
-
