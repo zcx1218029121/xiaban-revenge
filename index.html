@@ -648,7 +648,12 @@ function processCurrentEvent(){
   else if(ev.type==="ch"){ showChoice(ev); }
 }
 
-function advanceEvent(){ s.idx++;processCurrentEvent(); }
+function advanceEvent(){
+  s.idx++;
+  var evts=EVENTS[s.day];
+  if(!evts||s.idx>=evts.length){ endDay(); return; }
+  processCurrentEvent();
+}
 
 function handleLunch(){
   var healAmt=s.day>=5?15:(s.day>=3?12:10);
@@ -692,7 +697,18 @@ function startBoss(key){
 }
 
 function showChoice(ev){
-  hideAll();showScreen("event-screen");
+  hideAll();
+  // Clear any leftover enemy display from previous fight
+  s.ene=null;
+  var enemyNameEl=document.getElementById("enemy-name");
+  if(enemyNameEl) enemyNameEl.textContent="";
+  var enemyHpFill=document.getElementById("enemy-hp-fill");
+  if(enemyHpFill) enemyHpFill.style.width="0%";
+  var enemyIntentEl=document.getElementById("enemy-intent");
+  if(enemyIntentEl) enemyIntentEl.textContent="";
+  var enemySpriteEl=document.getElementById("enemy-sprite");
+  if(enemySpriteEl) enemySpriteEl.textContent="?";
+  showScreen("event-screen");
   document.getElementById("event-title").textContent=ev.title;
   document.getElementById("event-desc").textContent=ev.desc;
   var btns=document.getElementById("choice-btns");
