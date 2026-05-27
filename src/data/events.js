@@ -1,5 +1,6 @@
 // Events — 5 days of daily schedule
 import { deepCopy } from './constants.js';
+import { CP } from './cards.js';
 
 var EVENTS = {
 1:[

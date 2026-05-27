@@ -1,4 +1,4 @@
-// core.js — GameState class + global state s
+// core.js — GameState class + state accessor
 import { deepCopy, mkDeck } from './utils.js';
 import { RELICS } from '../data/relics.js';
 
@@ -34,6 +34,8 @@ class GameState {
     this.playerWeak = 0;
     this.breakdown = false;
     this._pendingKill = false;
+    this.endless = false;
+    this.floor = 0;
   }
 
   reset() {
@@ -66,9 +68,16 @@ class GameState {
     this.immuneThisTurn = false;
     this.playerWeak = 0;
     this.breakdown = false;
+    this.endless = false;
+    this.floor = 0;
   }
 
   resetForBattle() {
+    // Preserve all cards — shuffle hand+disc back into deck
+    this.deck = this.deck.concat(this.hand).concat(this.disc);
+    this.shuffleDeck();
+    this.hand = [];
+    this.disc = [];
     this.en = 3;
     this.men = 3;
     this.sh = 0;
@@ -76,10 +85,19 @@ class GameState {
     this.noShieldTurns = 0;
     this.noDrawThisTurn = false;
     this.immuneThisTurn = false;
+    this.enemySkipNext = false;
+    this.enemyDmgReduction = 0;
     this.playerWeak = 0;
     this.breakdown = false;
-    this.hand = [];
-    this.disc = [];
+  }
+
+  shuffleDeck() {
+    for (var i = this.deck.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = this.deck[i];
+      this.deck[i] = this.deck[j];
+      this.deck[j] = tmp;
+    }
   }
 
   clearBattle() {
@@ -101,10 +119,25 @@ class GameState {
     this.men = 3;
     this.sh = 0;
     this.tempDmgMult = 0;
+    this.noDrawThisTurn = false;
     this.noShieldTurns = Math.max(0, this.noShieldTurns - 1);
     this.playerWeak = Math.max(0, this.playerWeak - 1);
     this.breakdown = false;
+    this._factionPlays = {};
   }
 }
 
+// State accessor pattern for testability
+var _stateProvider = () => s;
+
+export function setStateProvider(provider) {
+  _stateProvider = provider;
+}
+
+export function getState() {
+  return _stateProvider();
+}
+
+// Backwards compatibility - default global state
 export var s = new GameState();
+export { GameState };

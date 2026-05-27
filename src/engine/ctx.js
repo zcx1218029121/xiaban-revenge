@@ -1,11 +1,10 @@
 // ctx.js — context factory (Phase 2 extraction)
-// NOTE: dealDamageToPlayer is from combat.js, not actions.js
 import { s } from './core.js';
 import { hasRelic, triggerRelic, addStress, heal, gainShield,
          modifyEnergy, drawCards, applyWeak, applyPoison,
-         shuffle, dealDamageToEnemy } from './actions.js';
-import { dealDamageToPlayer } from './combat.js';
+         shuffle, dealDamageToEnemy, dealDamageToPlayer } from './actions.js';
 import { updateHand, log, updateAll } from './ui.js';
+import { winGameEarly } from './game.js';
 
 export function makeCtx() {
   return {
@@ -41,6 +40,7 @@ export function makeCtx() {
     shuffle,
     log,
     updateAll,
+    winGameEarly,
     state: s,
   };
 }

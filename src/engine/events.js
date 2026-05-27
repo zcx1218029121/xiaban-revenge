@@ -35,6 +35,11 @@ export function handleLunch(){
 }
 
 export function startFight(key){
+  // Random enemy from pool if no key specified or key is "random"
+  if(!key||key==="random"){
+    var pool=Object.keys(EN).filter(function(k){ return !EN[k].isElite; });
+    key=pool[Math.floor(Math.random()*pool.length)];
+  }
   var e=EN[key];
   if(!e) return;
   var hpMult=[1,1.1,1.2,1.3,1.5][s.day-1]||1;
@@ -62,6 +67,48 @@ export function startBoss(key){
   triggerRelic(s,"onBattleStart");
   updateEnemyDisplay(makeCtx);updateAll();
   log("BOSS战："+b.name+"！","event");
+}
+
+// Endless mode: generate random scaled fights
+export function startEndlessFight(){
+  s.resetForBattle();
+  s.ic=true;
+  // Every 5th floor is a boss, every 10th is super boss
+  var isBoss=s.floor%5===0;
+  var isSuper=s.floor%10===0;
+  var allBosses=Object.keys(BD);
+  var allEnemies=Object.keys(EN).filter(function(k){ return !EN[k].isElite; });
+  var allElites=Object.keys(EN).filter(function(k){ return EN[k].isElite; });
+  // Scale: +8% HP per floor, +2% damage per floor
+  var scale=1+Math.floor((s.floor-1)*0.08*10)/10;
+  if(isSuper){
+    var b=BD[allBosses[Math.floor(Math.random()*allBosses.length)]];
+    s.boss=true;s.biIdx=0;
+    s.ene={name:b.name+" ⭐",emoji:b.emoji,maxHp:Math.floor(b.maxHp*scale*1.8),hp:Math.floor(b.maxHp*scale*1.8),weak:0,shield:0,armor:0,charge:0,poison:0,ints:b.ints,onTurn:b.onTurn,getIL:b.getIL};
+    log("超级BOSS！第"+s.floor+"层："+b.name,"event");
+  } else if(isBoss){
+    var b=BD[allBosses[Math.floor(Math.random()*allBosses.length)]];
+    s.boss=true;s.biIdx=0;
+    s.ene={name:b.name,emoji:b.emoji,maxHp:Math.floor(b.maxHp*scale),hp:Math.floor(b.maxHp*scale),weak:0,shield:0,armor:0,charge:0,poison:0,ints:b.ints,onTurn:b.onTurn,getIL:b.getIL};
+    log("BOSS！第"+s.floor+"层："+b.name,"event");
+  } else if(s.floor%3===0&&allElites.length>0){
+    var e=allElites[Math.floor(Math.random()*allElites.length)];
+    var ed=EN[e];
+    s.boss=false;
+    s.ene={name:ed.name+"(精英)",emoji:ed.emoji,maxHp:Math.floor(ed.maxHp*scale),hp:Math.floor(ed.maxHp*scale),weak:0,shield:0,armor:0,poison:0,isElite:true,canWeaken:ed.canWeaken,getIL:ed.getIL,onTurn:ed.onTurn};
+    log("精英！第"+s.floor+"层："+ed.name,"event");
+  } else {
+    var k=allEnemies[Math.floor(Math.random()*allEnemies.length)];
+    var d=EN[k];
+    s.boss=false;
+    s.ene={name:d.name,emoji:d.emoji,maxHp:Math.floor(d.maxHp*scale),hp:Math.floor(d.maxHp*scale),weak:0,shield:0,armor:0,poison:0,isElite:d.isElite||false,canWeaken:d.canWeaken,getIL:d.getIL,onTurn:d.onTurn};
+  }
+  var drawN=5+(s.stress>=7?1:0);
+  drawCards(drawN);
+  var floorEl=document.getElementById("enemy-name");
+  if(floorEl) floorEl.textContent=(floorEl.textContent||"")+" | 第"+s.floor+"层";
+  hideAll();showScreen("battle-ui");
+  updateEnemyDisplay(makeCtx);updateAll();
 }
 
 export function showChoice(ev){
