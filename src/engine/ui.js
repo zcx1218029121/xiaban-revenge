@@ -1,5 +1,6 @@
 // ui.js — DOM rendering and updates (Phase 2 extraction)
 import { s } from './core.js';
+import { playCard } from './combat.js';
 
 export function log(msg,type){
   type=type||"";
