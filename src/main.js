@@ -19,7 +19,8 @@ export { startGame, restartGame, retryBoss, nextDay, winGameEarly,
          proceedFromTransition, endDay } from './engine/game.js';
 export { advanceEvent, processCurrentEvent, showChoice,
          handleLunch, startFight, startBoss } from './engine/events.js';
-export { showCardRewards, showRelicRewards } from './engine/rewards.js';
+export { showCardRewards, showRelicRewards, showRelicScreen, skipRelic,
+         showRewardScreen } from './engine/rewards.js';
 export { playCard, endTurn, win, lose } from './engine/combat.js';
 
 // Setup window.game for HTML onclick handlers
@@ -27,7 +28,8 @@ import { startGame, restartGame, retryBoss, nextDay, winGameEarly,
          proceedFromTransition, endDay } from './engine/game.js';
 import { advanceEvent, processCurrentEvent, showChoice,
          handleLunch, startFight, startBoss } from './engine/events.js';
-import { showCardRewards, showRelicRewards } from './engine/rewards.js';
+import { showCardRewards, showRelicRewards, showRelicScreen, skipRelic,
+         showRewardScreen } from './engine/rewards.js';
 import { playCard, endTurn, win, lose } from './engine/combat.js';
 
 window.game = {
@@ -35,7 +37,8 @@ window.game = {
   proceedFromTransition, endDay,
   advanceEvent, processCurrentEvent, showChoice,
   handleLunch, startFight, startBoss,
-  showCardRewards, showRelicRewards,
+  showCardRewards, showRelicRewards, showRelicScreen, skipRelic,
+  showRewardScreen,
   playCard, endTurn, win, lose,
 };
 
