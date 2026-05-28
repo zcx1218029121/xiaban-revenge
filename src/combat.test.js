@@ -40,7 +40,7 @@ describe('Damage calculation', () => {
 
   test('stress multiplier stacks with other modifiers', () => {
     expect(calculateDamage(10, { stressMult: 1.5 })).toBe(15);
-    expect(calculateDamage(10, { stressMult: 2.5 })).toBe(25);
+    expect(calculateDamage(10, { stressMult: 1.25 })).toBe(12);
   });
 
   test('temp damage multiplier applies', () => {
@@ -161,24 +161,28 @@ describe('Weak duration', () => {
 });
 
 describe('Breakdown trigger', () => {
-  function checkBreakdown(stress, wasAlreadyBreakingDown) {
+  function checkBreakdown(stress, wasAlreadyBreakingDown, maxHp) {
     if (stress >= 10 && !wasAlreadyBreakingDown) {
-      return { triggered: true, breakdown: true };
+      var dmg = Math.floor(maxHp * 0.3);
+      return { triggered: true, breakdown: true, damage: dmg, newStress: 5 };
     }
-    return { triggered: false, breakdown: wasAlreadyBreakingDown };
+    return { triggered: false, breakdown: wasAlreadyBreakingDown, damage: 0, newStress: stress };
   }
 
-  test('breakdown triggers at stress 10', () => {
-    expect(checkBreakdown(10, false)).toEqual({ triggered: true, breakdown: true });
-    expect(checkBreakdown(11, false)).toEqual({ triggered: true, breakdown: true });
+  test('breakdown triggers at stress 10, deals 30% max HP, resets stress to 5', () => {
+    var result = checkBreakdown(10, false, 50);
+    expect(result.triggered).toBe(true);
+    expect(result.breakdown).toBe(true);
+    expect(result.damage).toBe(15);
+    expect(result.newStress).toBe(5);
   });
 
   test('breakdown does not re-trigger if already breaking down', () => {
-    expect(checkBreakdown(11, true)).toEqual({ triggered: false, breakdown: true });
+    expect(checkBreakdown(11, true, 50)).toEqual({ triggered: false, breakdown: true, damage: 0, newStress: 11 });
   });
 
   test('no breakdown below stress 10', () => {
-    expect(checkBreakdown(9, false)).toEqual({ triggered: false, breakdown: false });
+    expect(checkBreakdown(9, false, 50)).toEqual({ triggered: false, breakdown: false, damage: 0, newStress: 9 });
   });
 });
 

@@ -191,7 +191,6 @@ describe('GameState', () => {
 
 describe('Stress damage multiplier', () => {
   function calculateStressMultiplier(stress) {
-    if (stress >= 10) return 2.5;
     if (stress >= 7) return 1.5;
     if (stress >= 4) return 1.25;
     return 1;
@@ -212,11 +211,6 @@ describe('Stress damage multiplier', () => {
     expect(calculateStressMultiplier(7)).toBe(1.5);
     expect(calculateStressMultiplier(8)).toBe(1.5);
     expect(calculateStressMultiplier(9)).toBe(1.5);
-  });
-
-  test('2.5x bonus at stress 10+', () => {
-    expect(calculateStressMultiplier(10)).toBe(2.5);
-    expect(calculateStressMultiplier(15)).toBe(2.5);
   });
 });
 

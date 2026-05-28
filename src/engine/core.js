@@ -36,6 +36,7 @@ class GameState {
     this._pendingKill = false;
     this.endless = false;
     this.floor = 0;
+    this.equipment = [];
   }
 
   reset() {
@@ -70,6 +71,7 @@ class GameState {
     this.breakdown = false;
     this.endless = false;
     this.floor = 0;
+    this.equipment = [];
   }
 
   resetForBattle() {
@@ -111,6 +113,9 @@ class GameState {
     this.playerWeak = 0;
     this.breakdown = false;
     this._pendingKill = false;
+    this.enemySkipNext = false;
+    this.enemyDmgReduction = 0;
+    this.equipment = [];
   }
 
   nextTurn() {

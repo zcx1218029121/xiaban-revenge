@@ -30,12 +30,26 @@ export function triggerRelic(st, event){
 
 export function addStress(n){
   var state=s(); var prev=state.stress;state.stress+=n;
-  if(state.stress>=10&&prev<10){state.breakdown=true;log("崩溃！本回合伤害x2.5！","stress");}
+  if(state.stress>=10&&prev<10){
+    state.breakdown=true;
+    var dmg=Math.floor(state.pmax*0.3);
+    state.php=Math.max(0,state.php-dmg);
+    state.stress=5;
+    log("崩溃！受到"+dmg+"伤害，压力降至5","stress");
+    showDmgPopup(document.getElementById("hp"),dmg);
+    document.body.classList.add("shaking");
+    setTimeout(function(){ document.body.classList.remove("shaking"); },300);
+  }
   log("压力 +"+n+" ("+state.stress+"/10)","stress");updateAll();
+}
+
+function hasCurseInHand(state, id){
+  return (state.hand||[]).some(function(c){ return c.type==="curse"&&c.id===id; });
 }
 
 export function heal(n){
   var state=s();
+  if(hasCurseInHand(state,"yajiankang")){ log("亚健康！无法治疗","stress"); return; }
   if(hasRelic(state,"renshen")) n=Math.min(n,12);
   var old=state.php;state.php=Math.min(state.pmax,state.php+n);
   var healed=state.php-old;
@@ -44,6 +58,7 @@ export function heal(n){
 
 export function gainShield(n){
   var state=s();
+  if(hasCurseInHand(state,"shekong")){ log("社恐！无法获得护盾","stress"); return; }
   if(state.noShieldTurns>0){ log("本回合无法获得护盾！","stress"); return; }
   state.sh+=n;log("护盾 +"+n,"heal");
 }
@@ -79,7 +94,11 @@ export function drawCards(n){
       state.disc=[];
     }
     var card=state.deck.pop();
-    if(card) state.hand.push(card);
+    if(card){
+      state.hand.push(card);
+      // Curse cards force themselves into hand and trigger extra draw
+      if(card.type==="curse"){ n++; log("诅咒卡 "+card.name+" 强制加入手牌！","stress"); }
+    }
   }
   updateHand();
 }
@@ -96,8 +115,7 @@ export function dealDamageToEnemy(n){
   var wm=(e.weak&&e.weak>0)?Math.pow(0.75,e.weak):1;
   var fd=Math.floor(n*wm);
   var sm=1;
-  if(state.stress>=10){sm=2.5;if(!state.breakdown){state.breakdown=true;log("崩溃！伤害x2.5！","stress");}}
-  else if(state.stress>=7) sm=1.5;
+  if(state.stress>=7) sm=1.5;
   else if(state.stress>=4) sm=1.25;
   fd=Math.floor(fd*sm);
   if(state.tempDmgMult){ fd=Math.floor(fd*state.tempDmgMult); state.tempDmgMult=0; }

@@ -3,6 +3,7 @@ import { s } from './core.js';
 import { makeCtx } from './ctx.js';
 import { hasRelic, triggerRelic, drawCards, dealDamageToPlayer, heal } from './actions.js';
 import { executeCardAction } from './cardActions.js';
+import { processEquipment } from './cardActions.js';
 import { log, updateAll, updateEnemyDisplay, showDmgPopup, flashEnemy,
          showScreen, hideAll } from './ui.js';
 import { RELICS } from '../data/relics.js';
@@ -14,9 +15,12 @@ export function playCard(idx){
   if(s.breakdown){ log("崩溃中...无法出牌","stress"); return; }
   var card=s.hand[idx];
   if(!card){ console.warn("playCard: no card at idx",idx); return; }
+  if(card.unplayable){ log("这张诅咒无法打出！","event"); return; }
   if(card.cost>s.en){ log("能量不足！","event"); return; }
   s.en-=card.cost;
   s._pendingKill=false;
+  var isSpell=card.type==="spell";
+  var isEquip=card.type==="equipment";
   // Track faction and synergy
   var faction=card.faction||"通用";
   s._factionPlays=s._factionPlays||{};
@@ -36,7 +40,19 @@ export function playCard(idx){
       if(count===3){ s.en+=1; log(faction+"派系共鸣：+1能量","special"); }
       if(count===4){ heal(5); log(faction+"派系共鸣：治疗5HP","heal"); }
       s.hand.splice(realIdx,1);
-      s.disc.push(card);
+      if(isSpell || card.type === "curse"){
+        log(card.name+(isSpell?"使用后消失":"已净化"),"special");
+      } else if(isEquip){
+        if(s.equipment.length>=3){
+          // Remove oldest equipment if at max
+          var old=s.equipment.shift();
+          log(old.name+"被替换","event");
+        }
+        s.equipment.push(card);
+        log("装备了 "+card.name,"special");
+      } else {
+        s.disc.push(card);
+      }
       updateAll();
       if(s._pendingKill&&s.ic){ s._pendingKill=false; win(); }
     }catch(e){
@@ -52,9 +68,11 @@ export function endTurn(){
   s._pendingKill=false;
   log("--- 回合 "+s.t+" 结束 ---","turn");
   s.t++;
+  // Process equipment effects before enemy acts
+  processEquipment(s);
   if(s.breakdown){
-    s.breakdown=false;s.stress=5;
-    log("崩溃！本回合伤害x2.5！","breakdown");
+    s.breakdown=false;
+    log("崩溃结束，下一回合恢复正常","breakdown");
     document.body.classList.remove("breakdown");
   }
   if(s.ene&&s.ene.poison>0){
@@ -84,9 +102,33 @@ export function endTurn(){
   if(s._pendingKill){ s._pendingKill=false; lose(); return; }
   if(s._pendingKill&&s.ic){ s._pendingKill=false; win(); return; }
   if(!s.ic) return;
+  // Handle multi-turn immunity
+  if(s._immuneTurns&&s._immuneTurns>0){
+    s.immuneThisTurn=true;
+    s._immuneTurns--;
+  }
+  // Handle next-battle energy bonus
+  if(s._nextBattleEnergy>0){
+    s.en+=s._nextBattleEnergy;
+    s.men+=s._nextBattleEnergy;
+    s._nextBattleEnergy=0;
+  }
+  // Process curses in hand (tick down turnsLeft, auto-remove)
+  for(var ci=s.hand.length-1;ci>=0;ci--){
+    var curse=s.hand[ci];
+    if(curse.type==="curse"&&curse.turnsLeft!==undefined){
+      curse.turnsLeft--;
+      if(curse.turnsLeft<=0){
+        s.hand.splice(ci,1);
+        s.disc.push(curse);
+        log(curse.name+" 时效已过，移出手中","event");
+      }
+    }
+  }
   s.nextTurn();
   s.disc=s.disc.concat(s.hand);s.hand=[];
   var drawN=5;if(s.stress>=7) drawN++;
+  if(s._equipDrawBonus>0){ drawN+=s._equipDrawBonus; s._equipDrawBonus=0; }
   drawCards(drawN);
   updateAll();
   if(s.ene) updateEnemyDisplay(makeCtx);

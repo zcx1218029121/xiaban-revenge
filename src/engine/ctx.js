@@ -21,6 +21,7 @@ export function makeCtx() {
     get enemy()            { return s.ene; },
     get isBoss()           { return s.boss; },
     get relics()           { return s.relics; },
+    get equipment()        { return s.equipment; },
     get biIdx()            { return s.biIdx; },
     get bossDamageMult()   { return s.bossDamageMult; },
     get skipNextEvent()    { return s.skipNextEvent; },

@@ -108,8 +108,8 @@ export function showCardRewards(){
     content.appendChild(cardEl);
   });
   content.appendChild(skipBtn);
-  document.getElementById("tab-cards").style.opacity="1";
-  document.getElementById("tab-relics").style.opacity=".6";
+  var tc=document.getElementById("tab-cards"); if(tc) tc.style.opacity="1";
+  var tr=document.getElementById("tab-relics"); if(tr) tr.style.opacity=".6";
   window._rewardMode="cards";
 }
 
@@ -138,8 +138,8 @@ export function showRelicRewards(){
     };
     content.appendChild(el);
   });
-  document.getElementById("tab-cards").style.opacity=".6";
-  document.getElementById("tab-relics").style.opacity="1";
+  var tc2=document.getElementById("tab-cards"); if(tc2) tc2.style.opacity=".6";
+  var tr2=document.getElementById("tab-relics"); if(tr2) tr2.style.opacity="1";
   window._rewardMode="relics";
 }
 

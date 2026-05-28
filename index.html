@@ -37,7 +37,7 @@ body{font-family:"Noto Sans SC",sans-serif;background:#1a1a2e;color:#eaeaea;min-
 .enemy-name{font-weight:700;color:#e94560;font-size:1.1rem;margin-top:4px}
 .enemy-hp-bar{width:160px;height:12px;background:#333;border-radius:6px;margin-top:6px;overflow:hidden}
 .enemy-hp-fill{height:100%;background:linear-gradient(90deg,#e94560,#ff6b6b);transition:width .3s;border-radius:6px}
-.enemy-intent{margin-top:8px;font-size:.9rem;font-weight:700;padding:4px 12px;border-radius:12px;background:rgba(255,255,255,.08)}
+.enemy-hp-text{font-size:.7rem;color:#aaa;margin-top:2px}.enemy-intent{margin-top:8px;font-size:.9rem;font-weight:700;padding:4px 12px;border-radius:12px;background:rgba(255,255,255,.08)}
 .hud{width:100%;max-width:700px;display:flex;gap:18px;justify-content:center;margin:10px 0;font-size:.95rem;font-weight:700}
 .hud-stat{display:flex;align-items:center;gap:5px}
 .hp-color{color:#ff6b6b}.energy-color{color:#ffe66d}.shield-color{color:#4ecdc4}.stress-color{color:#9b59b6}
@@ -93,6 +93,14 @@ body{font-family:"Noto Sans SC",sans-serif;background:#1a1a2e;color:#eaeaea;min-
 .reward-cards .card:hover{transform:translateY(-8px) scale(1.05);box-shadow:0 8px 25px rgba(255,230,109,.5)}
 .relic-display{display:flex;gap:8px;justify-content:center;margin:4px 0;font-size:.75rem;min-height:20px;flex-wrap:wrap}
 .relic-tag{background:rgba(255,193,7,.2);border:1px solid rgba(255,193,7,.4);padding:2px 8px;border-radius:10px;color:#ffc107}
+.equipment-display{display:flex;gap:8px;justify-content:center;margin:4px 0;font-size:.75rem;min-height:20px;flex-wrap:wrap}
+.equip-tag{background:rgba(168,85,247,.2);border:1px solid rgba(168,85,247,.4);padding:2px 8px;border-radius:10px;color:#a855f7}
+.card-spell{box-shadow:0 0 8px rgba(168,85,247,.4)}
+.card-equipment{border-color:#94a3b8!important}
+.card-curse{filter:brightness(.7) sepia(.3)}
+.type-spell{color:#c084fc}
+.type-equipment{color:#94a3b8}
+.type-curse{color:#f87171}
 body.breakdown{animation:breakdownPulse .8s infinite}
 @keyframes breakdownPulse{0%,100%{box-shadow:inset 0 0 60px rgba(233,69,96,.3)}50%{box-shadow:inset 0 0 100px rgba(233,69,96,.6)}}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
@@ -124,7 +132,8 @@ body.shaking{animation:shake .3s}
 <div class="battle-ui hidden" id="battle-ui">
   <div class="hud"><div class="hud-stat hp-color">❤️ <span id="hp">50/50</span></div><div class="hud-stat energy-color">⚡ <span id="energy">3/3</span></div><div class="hud-stat shield-color">🛡️ <span id="shield">0</span></div><div class="hud-stat stress-color">😰 <span id="stress">0/10</span></div></div>
   <div class="relic-display" id="relic-display"></div>
-  <div class="battlefield"><div class="enemy-zone"><div class="enemy-sprite" id="enemy-sprite">👔</div><div class="enemy-name" id="enemy-name">敌人</div><div class="enemy-hp-bar"><div class="enemy-hp-fill" id="enemy-hp-fill" style="width:100%"></div></div><div class="enemy-intent" id="enemy-intent">👁️</div></div><button class="end-turn-btn" id="end-turn-btn" onclick="game.endTurn()">结束回合</button></div>
+  <div class="equipment-display" id="equipment-display"></div>
+  <div class="battlefield"><div class="enemy-zone"><div class="enemy-sprite" id="enemy-sprite">👔</div><div class="enemy-name" id="enemy-name">敌人</div><div class="enemy-hp-bar"><div class="enemy-hp-fill" id="enemy-hp-fill" style="width:100%"></div></div><div class="enemy-hp-text" id="enemy-hp-text">50/50</div><div class="enemy-intent" id="enemy-intent">👁️</div></div><button class="end-turn-btn" id="end-turn-btn" onclick="game.endTurn()">结束回合</button></div>
   <div class="log" id="log"></div>
   <div class="hand-area" id="hand"></div>
 </div>

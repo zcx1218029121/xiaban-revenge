@@ -46,7 +46,7 @@ export function flashEnemy(){
   if(el){ el.classList.add("hit"); setTimeout(function(){ el.classList.remove("hit"); },200); }
 }
 
-export function updateAll(){ updateHUD();updateHand();updateRelics();updateEnemyDisplay(); }
+export function updateAll(){ updateHUD();updateHand();updateRelics();updateEquipment();updateEnemyDisplay(); }
 
 export function updateHUD(){
   document.getElementById("hp").textContent=Math.max(0,s.php)+"/"+s.pmax;
@@ -60,9 +60,9 @@ export function updateHand(){
   if(!handEl) return;handEl.innerHTML="";
   s.hand.forEach(function(card,idx){
     var el=createCardEl(card,idx);
-    var canPlay=card.cost<=s.en&&!s.breakdown;
+    var canPlay=card.cost<=s.en&&!s.breakdown&&!card.unplayable;
     if(canPlay) el.classList.add("playable");else el.classList.add("unplayable");
-    el.onclick=(function(i){return function(){if(!s.breakdown&&card.cost<=s.en) playCard(i);};})(idx);
+    el.onclick=(function(i){return function(){if(!s.breakdown&&!card.unplayable&&card.cost<=s.en) playCard(i);};})(idx);
     handEl.appendChild(el);
   });
 }
@@ -74,14 +74,24 @@ export function createCardEl(card,idx){
   var rarityBorder={'C':'','U':'2px solid #60a5fa','R':'2px solid #fbbf24'}[card.rarity]||'';
   var rarityBadge={'U':'<span style="position:absolute;top:-4px;left:4px;font-size:.5rem;color:#60a5fa">◆</span>','R':'<span style="position:absolute;top:-4px;left:4px;font-size:.5rem;color:#fbbf24">★</span>'}[card.rarity]||'';
   if(rarityBorder) el.style.border=rarityBorder;
+  // Type-specific border/background overrides
+  if(card.type==="spell") costCls+=" card-spell";
+  if(card.type==="equipment") costCls+=" card-equipment";
+  if(card.type==="curse") costCls+=" card-curse";
   // Faction tag
   var factionTag=card.faction&&card.faction!=="通用"?'<span style="position:absolute;bottom:3px;right:4px;font-size:.45rem;color:rgba(255,255,255,.35)">'+card.faction+'</span>':'';
   el.className="card "+costCls;
   var costColor=["#4ade80","#60a5fa","#fb923c","#f472b6","#a78bfa"][Math.min(card.cost,4)];
-  var typeLabel={'attack':'攻击','skill':'技能','power':'能力','curse':'诅咒'}[card.type]||'技能';
-  var typeCls={'attack':'type-attack','skill':'type-skill','power':'type-power','curse':'type-curse'}[card.type]||'type-skill';
+  var typeLabel={'attack':'攻击','skill':'技能','power':'能力','spell':'法术','equipment':'装备','curse':'诅咒'}[card.type]||'技能';
+  var typeCls={'attack':'type-attack','skill':'type-skill','power':'type-power','spell':'type-spell','equipment':'type-equipment','curse':'type-curse'}[card.type]||'type-skill';
   el.innerHTML=rarityBadge+'<div class="card-cost" style="background:'+costColor+'">'+card.cost+'</div><div class="card-name">'+card.name+'</div><div class="card-effect">'+card.effect+'</div><div class="card-type '+typeCls+'">'+typeLabel+factionTag+'</div>';
   return el;
+}
+
+export function updateEquipment(){
+  var el=document.getElementById("equipment-display");
+  if(!el) return;
+  el.innerHTML=(s.equipment||[]).map(function(eq){ return '<span class="equip-tag" title="'+(eq.effect||'')+'">⚙️ '+eq.name+'</span>'; }).join("");
 }
 
 export function updateEnemyDisplay(makeCtx){
@@ -94,6 +104,8 @@ export function updateEnemyDisplay(makeCtx){
   var hpFill=document.getElementById("enemy-hp-fill");
   hpFill.style.width=pct+"%";
   hpFill.style.background=s.ene.poison>0?"linear-gradient(90deg,#e94560,#4ecdc4)":"#e94560";
+  var hpText=document.getElementById("enemy-hp-text");
+  if(hpText) hpText.textContent=s.ene.hp+"/"+s.ene.maxHp;
   var intentEl=document.getElementById("enemy-intent");
   if(intentEl && makeCtx){
     try{
